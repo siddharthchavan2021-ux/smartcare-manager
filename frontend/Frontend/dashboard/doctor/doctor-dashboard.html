@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard | SmartCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* ── Design tokens (identical to patient dashboard) ── */
+        :root {
+            --bg: #080e1a;
+            --surface: #0d1629;
+            --surface-2: #111d33;
+            --surface-3: #172240;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --primary: #3b9eff;
+            --primary-dim: rgba(59,158,255,0.12);
+            --primary-glow: rgba(59,158,255,0.3);
+            --violet: #8b7cf8;
+            --violet-dim: rgba(139,124,248,0.12);
+            --red: #f25272;
+            --red-dim: rgba(242,82,114,0.12);
+            --green: #22d3a5;
+            --green-dim: rgba(34,211,165,0.12);
+            --amber: #f5a623;
+            --amber-dim: rgba(245,166,35,0.12);
+            --teal: #22d3ee;
+            --teal-dim: rgba(34,211,238,0.12);
+            --text: #e8f0fe;
+            --text-2: #8a9cc0;
+            --text-3: #4f6080;
+            --mono: 'DM Mono', monospace;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --sidebar-w: 240px;
+            --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 15px; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 70% -10%, rgba(34,211,238,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at -10% 80%, rgba(139,124,248,0.06) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ══ SIDEBAR ══ */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.8rem 1.2rem;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem; margin-bottom: 2.5rem; }
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--teal), var(--primary));
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; color: #fff; flex-shrink: 0;
+        }
+        .logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+        .logo-text span { color: var(--teal); }
+
+        .nav-section { flex: 1; }
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--text-3);
+            padding: 0 0.8rem; margin-bottom: 0.5rem;
+        }
+        .nav-list { list-style: none; margin-bottom: 2rem; }
+        .nav-list li a {
+            display: flex; align-items: center; gap: 11px;
+            padding: 0.65rem 0.8rem; border-radius: var(--radius-sm);
+            text-decoration: none; color: var(--text-2);
+            font-size: 0.88rem; font-weight: 500; transition: var(--transition);
+        }
+        .nav-list li a i { width: 18px; text-align: center; font-size: 0.9rem; }
+        .nav-list li a:hover { color: var(--text); background: var(--surface-3); }
+        .nav-list li.active a { color: var(--teal); background: var(--teal-dim); }
+
+        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 1.2rem; }
+        .user-card { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), var(--primary));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0;
+        }
+        .user-info .name { font-size: 0.85rem; font-weight: 600; }
+        .user-info .role { font-size: 0.72rem; color: var(--text-2); }
+        .logout-btn {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0.65rem 0.8rem; border-radius: var(--radius-sm);
+            text-decoration: none; color: var(--red);
+            font-size: 0.88rem; font-weight: 500; transition: var(--transition);
+        }
+        .logout-btn:hover { background: var(--red-dim); }
+
+        /* ══ MAIN ══ */
+        .main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem 2.4rem; max-width: calc(100vw - var(--sidebar-w)); }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.8rem; }
+        .welcome h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+        .welcome h1 span { color: var(--teal); }
+        .welcome p { color: var(--text-2); font-size: 0.88rem; margin-top: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .date-chip {
+            background: var(--surface-2); border: 1px solid var(--border);
+            padding: 0.45rem 0.9rem; border-radius: var(--radius-sm);
+            font-size: 0.8rem; color: var(--text-2); font-family: var(--mono);
+        }
+        .icon-btn {
+            width: 38px; height: 38px; border-radius: var(--radius-sm);
+            background: var(--surface-2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-2); position: relative; transition: var(--transition);
+        }
+        .icon-btn:hover { border-color: var(--border-hover); color: var(--text); }
+        .notif-dot {
+            position: absolute; top: 7px; right: 7px;
+            width: 7px; height: 7px; background: var(--red);
+            border-radius: 50%; border: 1.5px solid var(--surface-2);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--teal-dim); border: 1px solid rgba(34,211,238,0.18);
+            padding: 0.75rem 1.4rem; border-radius: var(--radius); margin-bottom: 2rem;
+        }
+        .status-left { display: flex; align-items: center; gap: 10px; color: var(--teal); font-size: 0.88rem; font-weight: 500; }
+        .pulse { width: 9px; height: 9px; background: var(--teal); border-radius: 50%; animation: pulse 2s ease infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(34,211,238,0); }
+        }
+        .status-right { font-size: 0.78rem; color: var(--text-2); font-family: var(--mono); }
+
+        /* Section label */
+        .section-label {
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--text-3); margin-bottom: 0.9rem;
+        }
+
+        /* ══ STAT CARDS ══ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 2.4rem;
+        }
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 700px)  { .stats-grid { grid-template-columns: 1fr; } }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.4rem;
+            position: relative; overflow: hidden;
+            transition: var(--transition); cursor: default;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; inset: 0; opacity: 0;
+            background: radial-gradient(ellipse at 0% 0%, var(--accent-dim), transparent 70%);
+            transition: var(--transition);
+        }
+        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+        .stat-card:hover::before { opacity: 1; }
+
+        .stat-card.patients { --accent: var(--primary); --accent-dim: var(--primary-dim); }
+        .stat-card.today    { --accent: var(--teal);    --accent-dim: var(--teal-dim); }
+        .stat-card.pending  { --accent: var(--amber);   --accent-dim: var(--amber-dim); }
+        .stat-card.rating   { --accent: var(--violet);  --accent-dim: var(--violet-dim); }
+
+        .stat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.1rem; }
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--accent-dim); display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1rem;
+        }
+        .stat-trend {
+            font-size: 0.7rem; font-weight: 600; padding: 3px 7px;
+            border-radius: 20px; background: var(--green-dim); color: var(--green);
+        }
+        .stat-trend.down { background: var(--red-dim); color: var(--red); }
+        .stat-label { font-size: 0.78rem; color: var(--text-2); margin-bottom: 6px; }
+        .stat-value {
+            font-size: 2.1rem; font-weight: 700; font-family: var(--mono);
+            letter-spacing: -0.03em; color: var(--text); line-height: 1;
+        }
+        .stat-sub { font-size: 0.72rem; color: var(--text-3); margin-top: 4px; }
+
+        /* ══ CONTENT ROW ══ */
+        .content-row {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 1100px) { .content-row { grid-template-columns: 1fr; } }
+
+        /* ══ PANEL ══ */
+        .card-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.4rem; }
+        .panel-title { font-size: 0.95rem; font-weight: 600; }
+        .panel-link { font-size: 0.78rem; color: var(--teal); text-decoration: none; font-weight: 500; }
+        .panel-link:hover { text-decoration: underline; }
+
+        /* ══ APPOINTMENT ITEMS ══ */
+        .appt-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 1rem; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); margin-bottom: 0.8rem;
+            transition: var(--transition); background: var(--surface-2);
+        }
+        .appt-item:last-child { margin-bottom: 0; }
+        .appt-item:hover { border-color: var(--border-hover); }
+
+        .appt-date {
+            text-align: center; min-width: 46px;
+            background: var(--surface-3); border-radius: 8px;
+            padding: 8px 6px; flex-shrink: 0;
+        }
+        .appt-day { display: block; font-size: 1.3rem; font-weight: 700; font-family: var(--mono); line-height: 1; color: var(--teal); }
+        .appt-month { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); }
+
+        .patient-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--violet));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.78rem; color: #fff; flex-shrink: 0;
+        }
+
+        .appt-info { flex: 1; min-width: 0; }
+        .appt-info h3 { font-size: 0.88rem; font-weight: 600; }
+        .appt-info p { font-size: 0.76rem; color: var(--text-2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .appt-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+        .appt-time { font-size: 0.75rem; font-family: var(--mono); color: var(--text-2); }
+
+        .badge { font-size: 0.68rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+        .badge.upcoming  { background: var(--amber-dim); color: var(--amber); }
+        .badge.confirmed { background: var(--green-dim); color: var(--green); }
+        .badge.completed { background: var(--primary-dim); color: var(--primary); }
+        .badge.cancelled { background: var(--red-dim); color: var(--red); }
+
+        /* ══ PATIENT LIST ══ */
+        .patient-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0.8rem; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); margin-bottom: 0.6rem;
+            transition: var(--transition); background: var(--surface-2);
+            cursor: pointer;
+        }
+        .patient-row:last-child { margin-bottom: 0; }
+        .patient-row:hover { border-color: var(--teal); background: var(--teal-dim); }
+
+        .patient-row-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0;
+        }
+        .av-blue   { background: linear-gradient(135deg, #3b9eff, #8b7cf8); }
+        .av-green  { background: linear-gradient(135deg, #22d3a5, #22d3ee); }
+        .av-amber  { background: linear-gradient(135deg, #f5a623, #f25272); }
+        .av-violet { background: linear-gradient(135deg, #8b7cf8, #c084fc); }
+
+        .patient-row-info { flex: 1; min-width: 0; }
+        .patient-row-info h4 { font-size: 0.85rem; font-weight: 600; }
+        .patient-row-info p  { font-size: 0.73rem; color: var(--text-2); margin-top: 1px; }
+
+        .patient-row-meta { text-align: right; flex-shrink: 0; }
+        .patient-row-meta .vitals-mini { font-size: 0.7rem; font-family: var(--mono); color: var(--text-2); }
+        .patient-row-meta .status-dot {
+            display: inline-block; width: 7px; height: 7px;
+            border-radius: 50%; margin-right: 4px;
+        }
+        .dot-green  { background: var(--green); }
+        .dot-amber  { background: var(--amber); }
+        .dot-red    { background: var(--red); }
+
+        /* ══ QUICK STATS PANEL ══ */
+        .quick-panel {
+            display: flex; flex-direction: column; gap: 14px;
+        }
+
+        .quick-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.4rem;
+        }
+        .quick-card-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .quick-card-title { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
+        .quick-card-val { font-size: 0.8rem; font-family: var(--mono); font-weight: 600; color: var(--text); }
+
+        .progress-track { background: var(--surface-3); border-radius: 99px; height: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+        .fill-appt     { width: 78%; background: linear-gradient(90deg, var(--teal), var(--primary)); }
+        .fill-patients { width: 65%; background: linear-gradient(90deg, var(--primary), var(--violet)); }
+        .fill-rating   { width: 92%; background: linear-gradient(90deg, var(--violet), #c084fc); }
+
+        /* Schedule today */
+        .schedule-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .schedule-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .schedule-time { font-size: 0.75rem; font-family: var(--mono); color: var(--text-2); min-width: 52px; flex-shrink: 0; }
+        .schedule-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .schedule-info { flex: 1; }
+        .schedule-info p { font-size: 0.8rem; font-weight: 500; }
+        .schedule-info span { font-size: 0.72rem; color: var(--text-2); }
+
+        /* ══ ANIMATIONS ══ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card { animation: fadeUp 0.5s ease both; }
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.10s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.20s; }
+        .card-panel  { animation: fadeUp 0.5s 0.25s ease both; }
+        .quick-panel > * { animation: fadeUp 0.5s ease both; }
+        .quick-panel > *:nth-child(1) { animation-delay: 0.25s; }
+        .quick-panel > *:nth-child(2) { animation-delay: 0.32s; }
+        .quick-panel > *:nth-child(3) { animation-delay: 0.39s; }
+
+        /* ══ SCROLLBAR ══ */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+    /* === Notification Bell === */
+block
+STEP 2: Replace your existing header bell icon HTML with the BELL HTML below
+STEP 3: Add the SCRIPT block just before your closing </script> tag
+
+The bell polls /api/notifications/unread every 30 seconds.
+Clicking it opens a dropdown and loads all notifications.
+Clicking a notification marks it as read.
+"Mark all read" button clears the badge entirely.
+=======================================================================
+-->
+
+
+<!-- ═══════════════════════════════════════════════════
+     STEP 1 — CSS  (paste inside your <style> block)
+     ═══════════════════════════════════════════════════ -->
+<style>
+/* ── Notification Bell ── */
+.notif-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.notif-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--text-2);
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+.notif-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+.notif-badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    background: #f25272;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 17px; height: 17px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg, #0a0f1e);
+    display: none;
+}
+.notif-badge.show { display: flex; }
+
+/* ── Dropdown panel ── */
+.notif-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 340px;
+    background: #0d1526;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+    animation: notifFade 0.18s ease;
+}
+.notif-dropdown.open { display: block; }
+@keyframes notifFade { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+.notif-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.notif-header-title { color: var(--text, #e8f0fe); font-weight: 600; font-size: 0.88rem; }
+.notif-mark-all {
+    background: none; border: none; color: #3b9eff;
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; padding: 0;
+}
+.notif-mark-all:hover { text-decoration: underline; }
+
+.notif-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+.notif-list::-webkit-scrollbar { width: 4px; }
+.notif-list::-webkit-scrollbar-track { background: transparent; }
+.notif-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.notif-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: rgba(255,255,255,0.03); }
+.notif-item.unread { background: rgba(59,158,255,0.04); }
+.notif-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: #3b9eff;
+}
+
+.notif-icon {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;
+}
+.notif-icon.booked    { background: rgba(59,158,255,0.12);  color: #3b9eff; }
+.notif-icon.confirmed { background: rgba(34,211,165,0.12);  color: #22d3a5; }
+.notif-icon.cancelled { background: rgba(242,82,114,0.1);   color: #f25272; }
+.notif-icon.reminder  { background: rgba(245,166,35,0.12);  color: #f5a623; }
+
+.notif-body { flex: 1; min-width: 0; }
+.notif-title { color: var(--text, #e8f0fe); font-size: 0.82rem; font-weight: 600; margin-bottom: 2px; }
+.notif-msg   { color: #8a9cc0; font-size: 0.76rem; line-height: 1.45; white-space: normal; }
+.notif-time  { color: #4f6080; font-size: 0.7rem; margin-top: 4px; }
+
+.notif-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #4f6080;
+    font-size: 0.82rem;
+}
+.notif-empty i { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; opacity: 0.4; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-stethoscope"></i></div>
+            <span class="logo-text">Smart<span>Care</span></span>
+        </div>
+
+        <nav class="nav-section">
+            <p class="nav-label">Menu</p>
+            <ul class="nav-list">
+                <li class="active"><a href="#"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-users"></i> My Patients</a></li>
+                <li><a href="#"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                <li><a href="#"><i class="fas fa-file-medical-alt"></i> Medical Records</a></li>
+                <li><a href="#"><i class="fas fa-chart-line"></i> Analytics</a></li>
+                <li><a href="#"><i class="fas fa-user-cog"></i> Settings</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="doctorAvatar">DR</div>
+                <div class="user-info">
+                    <div class="name" id="doctorName">Dr. Smith</div>
+                    <div class="role" id="doctorSpec">Cardiologist</div>
+                </div>
+            </div>
+            <a href="../../login/login.html" class="logout-btn" id="logoutBtn">
+                <i class="fas fa-arrow-right-from-bracket"></i> Log out
+            </a>
+        </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="welcome">
+                <h1>Good morning, <span id="headerName">Doctor</span> 👨‍⚕️</h1>
+                <p>You have <strong id="todayCount" style="color:var(--teal)">8</strong> appointments scheduled today.</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-chip" id="currentDate">–</div>
+                <div class="notif-wrapper" id="notifWrapper">
+    <button class="notif-btn" id="notifBtn" title="Notifications">
+        <i class="fas fa-bell"></i>
+        <span class="notif-badge" id="notifBadge"></span>
+    </button>
+
+    <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-header">
+            <span class="notif-header-title">🔔 Notifications</span>
+            <button class="notif-mark-all" id="markAllBtn">Mark all read</button>
+        </div>
+        <div class="notif-list" id="notifList">
+            <div class="notif-empty"><i class="fas fa-bell-slash"></i>No notifications yet</div>
+        </div>
+    </div>
+</div>
+            </div>
+        </header>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="pulse"></span>
+                <i class="fas fa-circle-check" style="font-size:0.8rem;"></i>
+                Clinic Active · Accepting Patients
+            </div>
+            <span class="status-right" id="statusRight">Updated just now</span>
+        </div>
+
+        <!-- Stat Cards -->
+        <p class="section-label">Today's Overview</p>
+        <div class="stats-grid">
+
+            <div class="stat-card patients">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <span class="stat-trend">+3</span>
+                </div>
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value" id="statTotalPatients">–</div>
+                <div class="stat-sub" id="statPatientSub">Your patients</div>
+            </div>
+
+            <div class="stat-card today">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                    <span class="stat-trend">On track</span>
+                </div>
+                <div class="stat-label">Today's Appointments</div>
+                <div class="stat-value" id="statTodayAppts">–</div>
+                <div class="stat-sub" id="statApptSub">Loading...</div>
+            </div>
+
+            <div class="stat-card pending">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <span class="stat-trend down">4 new</span>
+                </div>
+                <div class="stat-label">Pending Reviews</div>
+                <div class="stat-value" id="statPending">–</div>
+                <div class="stat-sub">Awaiting confirmation</div>
+            </div>
+
+            <div class="stat-card rating">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                    <span class="stat-trend">Top 10%</span>
+                </div>
+                <div class="stat-label">Patient Rating</div>
+                <div class="stat-value">4.9</div>
+                <div class="stat-sub">Based on 89 reviews</div>
+            </div>
+
+        </div>
+
+        <!-- Content Row -->
+        <div class="content-row">
+
+            <!-- Today's Appointments -->
+            <div class="card-panel">
+                <div class="panel-header">
+                    <span class="panel-title">My Appointments</span>
+                    <span class="panel-link" id="lastUpdated" style="cursor:default;">Loading...</span>
+                </div>
+                <div id="apptList">
+                    <div style="text-align:center;padding:2rem;color:var(--text-3);">
+                        <i class="fas fa-spinner fa-spin"></i> Loading appointments...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="quick-panel">
+                <!-- Daily Progress -->
+                <div class="quick-card">
+                    <div class="panel-header" style="margin-bottom:1rem;">
+                        <span class="panel-title">Daily Progress</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <div>
+                            <div class="quick-card-header">
+                                <span class="quick-card-title"><i class="fas fa-calendar-check" style="margin-right:5px;color:var(--teal)"></i>Appointments Done</span>
+                                <span class="quick-card-val" id="progressDone">0 / 0</span>
+                            </div>
+                            <div class="progress-track"><div class="progress-fill fill-appt" id="progressBar" style="width:0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="quick-card-header">
+                                <span class="quick-card-title"><i class="fas fa-clock" style="margin-right:5px;color:var(--amber)"></i>Pending Confirmation</span>
+                                <span class="quick-card-val" id="progressPending">0</span>
+                            </div>
+                            <div class="progress-track"><div class="progress-fill" id="pendingBar" style="width:0%;background:var(--amber)"></div></div>
+                        </div>
+                        <div>
+                            <div class="quick-card-header">
+                                <span class="quick-card-title"><i class="fas fa-calendar-alt" style="margin-right:5px;color:var(--primary)"></i>Total Appointments</span>
+                                <span class="quick-card-val" id="progressTotal">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Timeline -->
+                <div class="quick-card">
+                    <div class="panel-header" style="margin-bottom:0.8rem;">
+                        <span class="panel-title">Today's Timeline</span>
+                    </div>
+                    <div id="scheduleList">
+                        <div style="text-align:center;padding:1rem;color:var(--text-3);font-size:0.82rem;">Loading...</div>
+                    </div>
+                </div>
+            </div></div>
+        </div>
+
+        <!-- Recent Patients -->
+        <p class="section-label">My Patients (from appointments)</p>
+        <div class="card-panel">
+            <div class="panel-header">
+                <span class="panel-title">Patient Overview</span>
+            </div>
+            <div id="patientGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+                <div style="color:var(--text-3);font-size:0.83rem;padding:1rem;"><i class="fas fa-spinner fa-spin"></i> Loading patients...</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API   = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user  = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Auth guard
+    if (!token) { window.location.href = '../../login/login.html'; }
+    if (user.role && user.role.toUpperCase() !== 'DOCTOR') { window.location.href = '../../login/login.html'; }
+
+    // Sidebar info
+    const nameParts = (user.name || 'Dr. Smith').replace(/^Dr\.\s*/i, '').split(' ');
+    const initials  = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const firstName = nameParts[0] || 'Doctor';
+
+    document.getElementById('doctorAvatar').textContent = initials;
+    document.getElementById('doctorName').textContent   = user.name || 'Dr. Smith';
+    document.getElementById('doctorSpec').textContent   = user.specialization || 'Doctor';
+    document.getElementById('headerName').textContent   = 'Dr. ' + firstName;
+
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', e => {
+        e.preventDefault();
+        localStorage.removeItem('token'); localStorage.removeItem('user');
+        window.location.href = '../../login/login.html';
+    });
+
+    // ── Load all appointments ──
+    let allAppointments = [];
+
+    async function loadAppointments() {
+        try {
+            const res  = await fetch(`${API}/appointments/my`, { headers: { Authorization: `Bearer ${token}` } });
+            const data = await res.json();
+            allAppointments = Array.isArray(data) ? data : [];
+            renderAppointments(allAppointments);
+            updateStats(allAppointments);
+            renderPatients(allAppointments);
+            document.getElementById('lastUpdated').textContent =
+                'Updated ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        } catch (err) {
+            document.getElementById('apptList').innerHTML =
+                '<div style="text-align:center;padding:2rem;color:var(--text-3);">Could not load appointments. Is the server running?</div>';
+        }
+    }
+
+    // ── Render appointment cards ──
+    function renderAppointments(appts) {
+        const list = document.getElementById('apptList');
+        if (!appts.length) {
+            list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3);">No appointments yet.</div>';
+            return;
+        }
+
+        const badgeMap = {
+            PENDING:   { cls: 'upcoming', label: 'Pending' },
+            CONFIRMED: { cls: 'confirmed', label: 'Confirmed' },
+            COMPLETED: { cls: 'completed', label: 'Completed' },
+            CANCELLED: { cls: 'cancelled', label: 'Cancelled' }
+        };
+        const colors = ['linear-gradient(135deg,var(--teal),var(--primary))',
+                        'linear-gradient(135deg,var(--green),var(--teal))',
+                        'linear-gradient(135deg,var(--amber),#f87171)',
+                        'linear-gradient(135deg,var(--violet),#c084fc)'];
+
+        list.innerHTML = appts.map((a, i) => {
+            const d      = new Date(a.date + 'T00:00:00');
+            const day    = String(d.getDate()).padStart(2, '0');
+            const mon    = d.toLocaleDateString('en-US', { month: 'short' });
+            const badge  = badgeMap[a.status] || { cls: 'upcoming', label: a.status };
+            const initls = (a.patientName || 'P').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            const color  = colors[i % colors.length];
+
+            let actions = '';
+            if (a.status === 'PENDING') {
+                actions = `
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                        <button class="action-btn" style="background:rgba(34,211,165,0.12);color:var(--green);border-color:var(--green);"
+                            onclick="updateStatus('${a.id}', 'CONFIRMED', this)">✓ Confirm</button>
+                        <button class="action-btn" style="background:rgba(242,82,114,0.1);color:var(--red);border-color:var(--red);"
+                            onclick="updateStatus('${a.id}', 'CANCELLED', this)">✕ Reject</button>
+                    </div>`;
+            } else if (a.status === 'CONFIRMED') {
+                actions = `
+                    <div style="margin-top:8px;">
+                        <button class="action-btn" style="background:rgba(99,102,241,0.12);color:var(--violet);border-color:var(--violet);"
+                            onclick="updateStatus('${a.id}', 'COMPLETED', this)">Mark Complete</button>
+                    </div>`;
+            }
+
+            return `<div class="appt-item" id="appt-${a.id}">
+                <div class="appt-date">
+                    <span class="appt-day">${day}</span>
+                    <span class="appt-month">${mon}</span>
+                </div>
+                <div class="patient-avatar" style="background:${color}">${initls}</div>
+                <div class="appt-info" style="flex:1;">
+                    <h3>${a.patientName || 'Patient'}</h3>
+                    <p><i class="fas fa-notes-medical" style="font-size:0.7rem;margin-right:4px;"></i>${a.reason || 'Consultation'}</p>
+                    ${actions}
+                </div>
+                <div class="appt-meta">
+                    <span class="appt-time"><i class="far fa-clock"></i> ${a.timeSlot}</span>
+                    <span class="badge ${badge.cls}">${badge.label}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Update status ──
+    async function updateStatus(id, status, btn) {
+        btn.disabled = true; btn.textContent = '...';
+        try {
+            const res  = await fetch(`${API}/appointments/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) { await loadAppointments(); }
+            else { const d = await res.json(); alert(d.error || 'Update failed'); btn.disabled = false; btn.textContent = status; }
+        } catch { alert('Connection failed.'); btn.disabled = false; }
+    }
+
+    // ── Stats cards ──
+    function updateStats(appts) {
+        const today     = new Date().toISOString().split('T')[0];
+        const todayA    = appts.filter(a => a.date === today);
+        const completed = todayA.filter(a => a.status === 'COMPLETED').length;
+        const pending   = appts.filter(a => a.status === 'PENDING').length;
+        const uniquePts = new Set(appts.map(a => a.patientId)).size;
+
+        document.getElementById('statTodayAppts').textContent  = todayA.length;
+        document.getElementById('statApptSub').textContent     = `${completed} completed · ${todayA.length - completed} remaining`;
+        document.getElementById('statPending').textContent     = pending;
+        document.getElementById('statTotalPatients').textContent = uniquePts;
+
+        // Progress panel
+        const total = todayA.length || 1;
+        document.getElementById('progressDone').textContent    = `${completed} / ${todayA.length}`;
+        document.getElementById('progressBar').style.width     = `${Math.round(completed / total * 100)}%`;
+        document.getElementById('progressPending').textContent = pending;
+        document.getElementById('pendingBar').style.width      = `${Math.min(pending * 10, 100)}%`;
+        document.getElementById('progressTotal').textContent   = appts.length;
+
+        // Schedule timeline (today's confirmed/pending)
+        const schedEl = document.getElementById('scheduleList');
+        const todaySorted = todayA.filter(a => a.status !== 'CANCELLED')
+            .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+        if (!todaySorted.length) {
+            schedEl.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem;text-align:center;">No appointments today.</div>';
+        } else {
+            const dotMap = { COMPLETED: 'dot-green', CONFIRMED: 'dot-green', PENDING: 'dot-amber' };
+            schedEl.innerHTML = todaySorted.map(a => `
+                <div class="schedule-item">
+                    <span class="schedule-time">${a.timeSlot.split(' ')[0]}</span>
+                    <span class="schedule-dot ${dotMap[a.status] || 'dot-amber'}"></span>
+                    <div class="schedule-info">
+                        <p>${a.patientName}</p>
+                        <span>${a.reason || 'Consultation'}</span>
+                    </div>
+                </div>`).join('');
+        }
+    }
+
+    // ── Patient grid (unique patients from appointments) ──
+    function renderPatients(appts) {
+        const grid = document.getElementById('patientGrid');
+        const seen = new Map();
+        appts.forEach(a => {
+            if (!seen.has(a.patientId)) seen.set(a.patientId, a);
+        });
+        const pts = Array.from(seen.values());
+
+        if (!pts.length) {
+            grid.innerHTML = '<div style="color:var(--text-3);font-size:0.83rem;padding:1rem;">No patient data yet.</div>';
+            return;
+        }
+
+        const avClasses = ['av-blue', 'av-green', 'av-amber', 'av-violet'];
+        grid.innerHTML = pts.map((a, i) => {
+            const initls = (a.patientName || 'P').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            const avc    = avClasses[i % avClasses.length];
+            const lastAppt = new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return `<div class="patient-row">
+                <div class="patient-row-avatar ${avc}">${initls}</div>
+                <div class="patient-row-info">
+                    <h4>${a.patientName}</h4>
+                    <p>${a.reason || 'General'}</p>
+                </div>
+                <div class="patient-row-meta">
+                    <div class="vitals-mini"><span class="status-dot dot-green"></span>${a.status}</div>
+                    <div class="vitals-mini" style="margin-top:2px;">${lastAppt}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // Init
+    loadAppointments();
+    setInterval(loadAppointments, 60000); // refresh every minute
+
+    // === Notification Bell ===
+// ── Notification Bell ──────────────────────────────────────────────
+(function() {
+    const notifBtn      = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifBadge    = document.getElementById('notifBadge');
+    const notifList     = document.getElementById('notifList');
+    const markAllBtn    = document.getElementById('markAllBtn');
+
+    const iconMap = {
+        APPOINTMENT_BOOKED:    { cls: 'booked',    icon: '📋' },
+        APPOINTMENT_CONFIRMED: { cls: 'confirmed', icon: '✓'  },
+        APPOINTMENT_CANCELLED: { cls: 'cancelled', icon: '✕'  },
+        APPOINTMENT_REMINDER:  { cls: 'reminder',  icon: '🔔' }
+    };
+
+    function timeAgo(isoString) {
+        if (!isoString) return '';
+        const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+        if (diff < 60)   return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    // Poll unread count every 30 seconds — lightweight, only updates the badge
+    async function pollUnread() {
+        try {
+            const res  = await fetch(`${API}/notifications/unread`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const count = data.unread || 0;
+            notifBadge.textContent = count > 9 ? '9+' : count;
+            notifBadge.classList.toggle('show', count > 0);
+        } catch { /* silent — backend might not be running */ }
+    }
+
+    // Load full notification list (only when dropdown opens)
+    async function loadNotifications() {
+        notifList.innerHTML = '<div class="notif-empty"><i class="fas fa-spinner fa-spin"></i></div>';
+        try {
+            const res   = await fetch(`${API}/notifications`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const items = await res.json();
+
+            if (!items.length) {
+                notifList.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i>No notifications yet</div>';
+                return;
+            }
+
+            notifList.innerHTML = items.map(n => {
+                const map = iconMap[n.type] || { cls: 'booked', icon: '📋' };
+                return `<div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" onclick="markRead('${n.id}', this)">
+                    <div class="notif-icon ${map.cls}">${map.icon}</div>
+                    <div class="notif-body">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-msg">${n.message}</div>
+                        <div class="notif-time">${timeAgo(n.createdAt)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch {
+            notifList.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
+        }
+    }
+
+    // Mark one as read
+    window.markRead = async function(id, el) {
+        if (!el.classList.contains('unread')) return;
+        try {
+            await fetch(`${API}/notifications/${id}/read`, {
+                method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+            });
+            el.classList.remove('unread');
+            pollUnread(); // refresh badge
+        } catch { /* silent */ }
+    };
+
+    // Mark all as read
+    markAllBtn.addEventListener('click', async () => {
+        try {
+            await fetch(`${API}/notifications/read-all`, {
+                method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+            });
+            document.querySelectorAll('.notif-item.unread')
+                .forEach(el => el.classList.remove('unread'));
+            notifBadge.classList.remove('show');
+        } catch { /* silent */ }
+    });
+
+    // Toggle dropdown
+    notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = notifDropdown.classList.toggle('open');
+        if (isOpen) loadNotifications();
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('notifWrapper').contains(e.target)) {
+            notifDropdown.classList.remove('open');
+        }
+    });
+
+    // Start polling
+    pollUnread();
+    setInterval(pollUnread, 30000);
+})();
+</script>
+</body>
+</html>

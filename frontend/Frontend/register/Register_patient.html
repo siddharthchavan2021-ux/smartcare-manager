@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Registration | SmartCare</title>
+    <link rel="stylesheet" href="register.css">
+</head>
+<body>
+
+<div class="particles">
+    <div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="register-wrapper">
+    <div class="register-card">
+        <div class="card-header">
+            <div class="icon-badge patient">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <h1>Patient Registration</h1>
+            <p>Start your journey to better health</p>
+        </div>
+
+        <div id="alertBox" class="alert hidden"></div>
+
+        <form id="patientForm">
+            <div class="form-section">
+                <h3 class="section-title">Personal Information</h3>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="text" id="firstName" required autocomplete="given-name">
+                        <label for="firstName">First Name</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="lastName" required autocomplete="family-name">
+                        <label for="lastName">Last Name</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="email" id="email" required autocomplete="email">
+                    <label for="email">Email Address</label>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="tel" id="phone" required autocomplete="tel">
+                        <label for="phone">Phone Number</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="dob" required>
+                        <label for="dob" class="always-raised">Date of Birth</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group select-group">
+                        <select id="gender" required>
+                            <option value="" disabled selected></option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="prefer-not">Prefer not to say</option>
+                        </select>
+                        <label for="gender">Gender</label>
+                        <div class="select-arrow">▼</div>
+                    </div>
+                    <div class="input-group select-group">
+                        <select id="bloodGroup" required>
+                            <option value="" disabled selected></option>
+                            <option>A+</option><option>A-</option>
+                            <option>B+</option><option>B-</option>
+                            <option>AB+</option><option>AB-</option>
+                            <option>O+</option><option>O-</option>
+                        </select>
+                        <label for="bloodGroup">Blood Group</label>
+                        <div class="select-arrow">▼</div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="address" required>
+                    <label for="address">Address</label>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="text" id="city" required>
+                        <label for="city">City</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="zipcode" required>
+                        <label for="zipcode">Zip Code</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="emergencyContact" required>
+                    <label for="emergencyContact">Emergency Contact (Name & Phone)</label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Account Security</h3>
+                <div class="input-group">
+                    <input type="password" id="password" required autocomplete="new-password">
+                    <label for="password">Password</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="confirmPassword" required>
+                    <label for="confirmPassword">Confirm Password</label>
+                </div>
+            </div>
+
+            <div class="terms-checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" required>
+                    <span class="checkmark"></span>
+                    <span>I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-register" id="submitBtn">
+                <span>Create Patient Account</span>
+                <div class="btn-glow"></div>
+            </button>
+        </form>
+
+        <div class="extra-links">
+            <p>Already have an account? <a href="../login/login.html">Login here</a></p>
+            <p class="role-switch">Register as <a href="../register/Register_doctor.html">Doctor</a></p>
+            <a href="../index/index.html" class="back-home">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FIX: Updated to /api/auth to match the fixed AuthController
+    const API = 'http://localhost:5000/api/auth';
+
+    // FIX: Floating label init runs on DOMContentLoaded so pre-filled
+    //      and date inputs are handled correctly from the start
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.input-group input, .input-group select').forEach(el => {
+            // raise label immediately if field already has a value
+            if (el.value) el.closest('.input-group').classList.add('focused');
+
+            el.addEventListener('focus', () => el.closest('.input-group').classList.add('focused'));
+            el.addEventListener('blur',  () => {
+                if (!el.value) el.closest('.input-group').classList.remove('focused');
+            });
+            // For selects: raise label when a real option is chosen
+            if (el.tagName === 'SELECT') {
+                el.addEventListener('change', () => {
+                    if (el.value) el.closest('.input-group').classList.add('focused');
+                });
+            }
+        });
+    });
+
+    function showAlert(message, type = 'error') {
+        const box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className = `alert ${type}`;
+    }
+
+    document.getElementById('patientForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const pass    = document.getElementById('password').value;
+        const confirm = document.getElementById('confirmPassword').value;
+
+        if (pass !== confirm) { showAlert('Passwords do not match!'); return; }
+        if (pass.length < 6)  { showAlert('Password must be at least 6 characters!'); return; }
+
+        const btn  = document.getElementById('submitBtn');
+        const span = btn.querySelector('span');
+        btn.disabled = true;
+        span.textContent = 'Creating Account...';
+
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName  = document.getElementById('lastName').value.trim();
+
+        const payload = {
+            name:             `${firstName} ${lastName}`,
+            email:            document.getElementById('email').value.trim(),
+            password:         pass,
+            role:             'PATIENT',
+            phone:            document.getElementById('phone').value.trim(),
+            dob:              document.getElementById('dob').value,
+            gender:           document.getElementById('gender').value,
+            bloodGroup:       document.getElementById('bloodGroup').value,
+            address:          document.getElementById('address').value.trim(),
+            city:             document.getElementById('city').value.trim(),
+            zipcode:          document.getElementById('zipcode').value.trim(),
+            emergencyContact: document.getElementById('emergencyContact').value.trim()
+        };
+
+        try {
+            const res  = await fetch(`${API}/register`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'Registration failed. Please try again.');
+                btn.disabled = false;
+                span.textContent = 'Create Patient Account';
+                return;
+            }
+
+            showAlert('Account created! Sending OTP to your email...', 'success');
+            span.textContent = '✓ OTP Sent!';
+
+            sessionStorage.setItem('pendingEmail', payload.email);
+            sessionStorage.setItem('pendingName',  payload.name);
+
+            setTimeout(() => {
+                window.location.href = 'verify-otp.html?email=' + encodeURIComponent(payload.email);
+            }, 1200);
+
+        } catch (err) {
+            showAlert('Cannot connect to server. Make sure the backend is running on port 8080.');
+            btn.disabled = false;
+            span.textContent = 'Create Patient Account';
+        }
+    });
+</script>
+</body>
+</html>

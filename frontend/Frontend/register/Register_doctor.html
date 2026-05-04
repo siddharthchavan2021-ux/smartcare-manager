@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Registration | SmartCare</title>
+    <link rel="stylesheet" href="register.css">
+</head>
+<body>
+
+<div class="particles">
+    <div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="register-wrapper">
+    <div class="register-card">
+        <div class="card-header">
+            <div class="icon-badge doctor">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <h1>Doctor Registration</h1>
+            <p>Join our network of healthcare professionals</p>
+        </div>
+
+        <div id="alertBox" class="alert hidden"></div>
+
+        <form id="doctorForm">
+            <div class="form-section">
+                <h3 class="section-title">Personal Information</h3>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="text" id="firstName" required>
+                        <label for="firstName">First Name</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="lastName" required>
+                        <label for="lastName">Last Name</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="email" id="email" required>
+                    <label for="email">Email Address</label>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="tel" id="phone" required>
+                        <label for="phone">Phone Number</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="dob" required>
+                        <label for="dob" class="always-raised">Date of Birth</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Professional Details</h3>
+                <div class="input-group">
+                    <input type="text" id="licenseNumber" required>
+                    <label for="licenseNumber">Medical License Number</label>
+                </div>
+                <div class="form-row">
+                    <div class="input-group select-group">
+                        <select id="specialization" required>
+                            <option value="" disabled selected></option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Endocrinology">Endocrinology</option>
+                            <option value="Gastroenterology">Gastroenterology</option>
+                            <option value="General Practice">General Practice</option>
+                            <option value="Gynecology">Gynecology</option>
+                            <option value="Neurology">Neurology</option>
+                            <option value="Oncology">Oncology</option>
+                            <option value="Orthopedics">Orthopedics</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                            <option value="Radiology">Radiology</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Urology">Urology</option>
+                        </select>
+                        <label for="specialization">Specialization</label>
+                        <div class="select-arrow">▼</div>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="experience" required min="0" max="60">
+                        <label for="experience">Years of Experience</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="qualification" required>
+                    <label for="qualification">Highest Qualification (e.g. MBBS, MD)</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="hospital" required>
+                    <label for="hospital">Current Hospital / Clinic</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="clinicAddress" required>
+                    <label for="clinicAddress">Clinic Address</label>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <input type="text" id="city" required>
+                        <label for="city">City</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="consultFee" required min="0">
+                        <label for="consultFee">Consultation Fee (₹)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Account Security</h3>
+                <div class="input-group">
+                    <input type="password" id="password" required autocomplete="new-password">
+                    <label for="password">Password</label>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="confirmPassword" required>
+                    <label for="confirmPassword">Confirm Password</label>
+                </div>
+            </div>
+
+            <div class="terms-checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" required>
+                    <span class="checkmark"></span>
+                    <span>I certify that all information provided is accurate and agree to the <a href="#">Terms & Conditions</a></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-register" id="submitBtn">
+                <span>Submit Registration</span>
+                <div class="btn-glow"></div>
+            </button>
+        </form>
+
+        <div class="extra-links">
+            <p>Already have an account? <a href="../login/login.html">Login here</a></p>
+            <p class="role-switch">Register as <a href="Register_patient.html">Patient</a></p>
+            <a href="../index/index.html" class="back-home">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FIX: Updated to /api/auth to match the fixed AuthController
+    const API = 'http://localhost:5000/api/auth';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.input-group input, .input-group select').forEach(el => {
+            if (el.value) el.closest('.input-group').classList.add('focused');
+            el.addEventListener('focus', () => el.closest('.input-group').classList.add('focused'));
+            el.addEventListener('blur',  () => {
+                if (!el.value) el.closest('.input-group').classList.remove('focused');
+            });
+            if (el.tagName === 'SELECT') {
+                el.addEventListener('change', () => {
+                    if (el.value) el.closest('.input-group').classList.add('focused');
+                });
+            }
+        });
+    });
+
+    function showAlert(message, type = 'error') {
+        const box = document.getElementById('alertBox');
+        box.textContent = message;
+        box.className = `alert ${type}`;
+    }
+
+    document.getElementById('doctorForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const pass    = document.getElementById('password').value;
+        const confirm = document.getElementById('confirmPassword').value;
+
+        if (pass !== confirm) { showAlert('Passwords do not match!'); return; }
+        if (pass.length < 6)  { showAlert('Password must be at least 6 characters!'); return; }
+
+        const btn  = document.getElementById('submitBtn');
+        const span = btn.querySelector('span');
+        btn.disabled = true;
+        span.textContent = 'Submitting Application...';
+
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName  = document.getElementById('lastName').value.trim();
+
+        const payload = {
+            name:           `Dr. ${firstName} ${lastName}`,
+            email:          document.getElementById('email').value.trim(),
+            password:       pass,
+            role:           'DOCTOR',
+            phone:          document.getElementById('phone').value.trim(),
+            dob:            document.getElementById('dob').value,
+            licenseNumber:  document.getElementById('licenseNumber').value.trim(),
+            specialization: document.getElementById('specialization').value,
+            experience:     parseInt(document.getElementById('experience').value),
+            qualification:  document.getElementById('qualification').value.trim(),
+            hospital:       document.getElementById('hospital').value.trim(),
+            clinicAddress:  document.getElementById('clinicAddress').value.trim(),
+            city:           document.getElementById('city').value.trim(),
+            consultFee:     parseFloat(document.getElementById('consultFee').value)
+        };
+
+        try {
+            const res  = await fetch(`${API}/register`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'Registration failed. Please try again.');
+                btn.disabled = false;
+                span.textContent = 'Submit Registration';
+                return;
+            }
+
+            showAlert('Account created! Sending OTP to your email...', 'success');
+            span.textContent = '✓ OTP Sent!';
+
+            sessionStorage.setItem('pendingEmail', payload.email);
+            sessionStorage.setItem('pendingName',  payload.name);
+
+            setTimeout(() => {
+                window.location.href = 'verify-otp.html?email=' + encodeURIComponent(payload.email);
+            }, 1200);
+
+        } catch (err) {
+            showAlert('Cannot connect to server. Make sure the backend is running on port 8080.');
+            btn.disabled = false;
+            span.textContent = 'Submit Registration';
+        }
+    });
+</script>
+</body>
+</html>

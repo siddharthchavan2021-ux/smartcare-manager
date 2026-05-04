@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | SmartCare</title>
+    <link rel="stylesheet" href="register.css">
+    <style>
+        .otp-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 1.8rem;
+        }
+        .otp-box {
+            width: 52px; height: 58px;
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #e8f0fe;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .otp-box:focus {
+            border-color: #38bdf8;
+            background: rgba(56,189,248,0.06);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+        }
+        .otp-box.filled { border-color: #38bdf8; color: #38bdf8; }
+        .otp-box.error  { border-color: #f25272; animation: shake 0.4s ease; }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%     { transform: translateX(-6px); }
+            40%     { transform: translateX(6px); }
+            60%     { transform: translateX(-4px); }
+            80%     { transform: translateX(4px); }
+        }
+
+        .email-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(56,189,248,0.08);
+            border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 50px; padding: 5px 14px;
+            font-size: 0.82rem; color: #38bdf8;
+            margin-bottom: 1.5rem; word-break: break-all;
+        }
+
+        .timer-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.8rem; font-size: 0.85rem; color: #8a9cc0;
+        }
+        .timer { font-family: 'Courier New', monospace; font-weight: 700; color: #38bdf8; }
+        .timer.expiring { color: #f25272; }
+
+        .resend-btn {
+            background: none; border: none; color: #38bdf8;
+            font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; padding: 0; font-family: inherit;
+        }
+        .resend-btn:hover { text-decoration: underline; }
+        .resend-btn:disabled { color: #4f6080; cursor: not-allowed; text-decoration: none; }
+
+        .steps {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; margin-bottom: 1.5rem;
+        }
+        .step {
+            width: 28px; height: 4px; border-radius: 99px;
+            background: rgba(255,255,255,0.08); transition: background 0.4s;
+        }
+        .step.done   { background: #22d3a5; }
+        .step.active { background: #38bdf8; }
+
+        .change-email {
+            display: block; text-align: center;
+            margin-top: 1rem; color: #8a9cc0; font-size: 0.83rem;
+        }
+        .change-email a { color: #38bdf8; text-decoration: none; font-weight: 600; }
+        .change-email a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="register-wrapper">
+    <div class="register-card" style="max-width:460px;">
+
+        <div class="card-header">
+            <div class="logo">Smart<span>Care</span></div>
+            <h1>Verify your email</h1>
+            <p>We've sent a 6-digit code to your email address</p>
+        </div>
+
+        <!-- Step indicator -->
+        <div class="steps">
+            <div class="step done"></div>
+            <div class="step active"></div>
+            <div class="step"></div>
+        </div>
+
+        <div id="alertBox" class="alert hidden"></div>
+
+        <!-- Email display -->
+        <div style="text-align:center;">
+            <div class="email-badge">
+                <span>✉️</span>
+                <span id="emailDisplay">your@email.com</span>
+            </div>
+        </div>
+
+        <!-- 6 OTP input boxes -->
+        <div class="otp-group" id="otpGroup">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="otp-box" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+        </div>
+
+        <!-- Timer + Resend -->
+        <div class="timer-row">
+            <span>Expires in <span class="timer" id="timer">05:00</span></span>
+            <button class="resend-btn" id="resendBtn" disabled>Resend OTP</button>
+        </div>
+
+        <!-- Verify button -->
+        <button class="btn-register" id="verifyBtn" disabled style="width:100%;">
+            <span>Verify Email</span>
+            <div class="btn-glow"></div>
+        </button>
+
+        <p class="change-email">
+            Wrong email? <a href="Register_main.html">Go back to register</a>
+        </p>
+
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5000/api/auth';
+
+    // Get email from URL or sessionStorage
+    const params = new URLSearchParams(window.location.search);
+    const email  = params.get('email') || sessionStorage.getItem('pendingEmail') || '';
+
+    if (!email) {
+        window.location.href = 'Register_main.html';
+    }
+
+    document.getElementById('emailDisplay').textContent = email;
+
+    // ── OTP boxes ──
+    const boxes     = Array.from(document.querySelectorAll('.otp-box'));
+    const verifyBtn = document.getElementById('verifyBtn');
+
+    boxes.forEach((box, i) => {
+        box.addEventListener('input', () => {
+            box.value = box.value.replace(/\D/g, '').slice(-1);
+            box.classList.toggle('filled', box.value !== '');
+            if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+            verifyBtn.disabled = !boxes.every(b => b.value !== '');
+        });
+
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !box.value && i > 0) {
+                boxes[i - 1].focus();
+                boxes[i - 1].value = '';
+                boxes[i - 1].classList.remove('filled');
+            }
+        });
+
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+            pasted.split('').forEach((char, idx) => {
+                if (boxes[idx]) { boxes[idx].value = char; boxes[idx].classList.add('filled'); }
+            });
+            verifyBtn.disabled = !boxes.every(b => b.value !== '');
+            if (pasted.length === 6) verifyBtn.focus();
+        });
+    });
+
+    boxes[0].focus();
+
+    // ── Countdown timer ──
+    let totalSeconds  = 300;
+    let timerInterval = null;
+    const timerEl     = document.getElementById('timer');
+    const resendBtn   = document.getElementById('resendBtn');
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        totalSeconds = 300;
+        resendBtn.disabled = true;
+        timerInterval = setInterval(() => {
+            totalSeconds--;
+            const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const s = String(totalSeconds % 60).padStart(2, '0');
+            timerEl.textContent = `${m}:${s}`;
+            timerEl.classList.toggle('expiring', totalSeconds < 60);
+            if (totalSeconds <= 0) {
+                clearInterval(timerInterval);
+                timerEl.textContent = '00:00';
+                resendBtn.disabled = false;
+                showAlert('OTP expired. Please request a new one.', 'error');
+            }
+        }, 1000);
+    }
+    startTimer();
+
+    // ── Alert ──
+    function showAlert(msg, type = 'error') {
+        const box = document.getElementById('alertBox');
+        box.textContent = msg;
+        box.className = `alert ${type}`;
+        box.classList.remove('hidden');
+    }
+
+    function shakeBoxes() {
+        boxes.forEach(b => {
+            b.classList.add('error');
+            setTimeout(() => b.classList.remove('error'), 500);
+        });
+    }
+
+    // ── Verify ──
+    verifyBtn.addEventListener('click', async () => {
+        const otp  = boxes.map(b => b.value).join('');
+        const span = verifyBtn.querySelector('span');
+        verifyBtn.disabled = true;
+        span.textContent = 'Verifying...';
+
+        try {
+            const res  = await fetch(`${API}/verify-otp`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAlert(data.error || 'Invalid OTP. Please try again.');
+                shakeBoxes();
+                boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+                boxes[0].focus();
+                verifyBtn.disabled = false;
+                span.textContent = 'Verify Email';
+                return;
+            }
+
+            clearInterval(timerInterval);
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user',  JSON.stringify(data));
+            sessionStorage.removeItem('pendingEmail');
+            sessionStorage.removeItem('pendingName');
+
+            showAlert('Email verified! Redirecting...', 'success');
+            span.textContent = '✓ Verified!';
+
+            setTimeout(() => {
+                const role = data.role.toUpperCase();
+                if      (role === 'PATIENT') window.location.href = '../dashboard/patient/patient-dashboard.html';
+                else if (role === 'DOCTOR')  window.location.href = '../dashboard/doctor/doctor-dashboard.html';
+                else if (role === 'ADMIN')   window.location.href = '../dashboard/admin/admin-dashboard.html';
+            }, 1200);
+
+        } catch (err) {
+            showAlert('Connection failed. Is the server running on port 8080?');
+            verifyBtn.disabled = false;
+            span.textContent = 'Verify Email';
+        }
+    });
+
+    // ── Resend ──
+    resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Sending...';
+        try {
+            const res  = await fetch(`${API}/resend-otp`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                showAlert(data.error || 'Could not resend OTP.');
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend OTP';
+                return;
+            }
+            showAlert('New OTP sent! Check your inbox.', 'success');
+            resendBtn.textContent = 'Resend OTP';
+            boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+            verifyBtn.disabled = true;
+            boxes[0].focus();
+            startTimer();
+        } catch (err) {
+            showAlert('Connection failed.');
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend OTP';
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | SmartCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #080e1a;
+            --surface: #0d1629;
+            --surface-2: #111d33;
+            --surface-3: #172240;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --primary: #3b9eff;
+            --primary-dim: rgba(59,158,255,0.12);
+            --violet: #8b7cf8;
+            --violet-dim: rgba(139,124,248,0.12);
+            --red: #f25272;
+            --red-dim: rgba(242,82,114,0.12);
+            --green: #22d3a5;
+            --green-dim: rgba(34,211,165,0.12);
+            --amber: #f5a623;
+            --amber-dim: rgba(245,166,35,0.12);
+            --purple: #a855f7;
+            --purple-dim: rgba(168,85,247,0.12);
+            --text: #e8f0fe;
+            --text-2: #8a9cc0;
+            --text-3: #4f6080;
+            --mono: 'DM Mono', monospace;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --sidebar-w: 240px;
+            --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 15px; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 70% -10%, rgba(168,85,247,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at -10% 80%, rgba(59,158,255,0.06) 0%, transparent 55%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ══ SIDEBAR ══ */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            padding: 1.8rem 1.2rem;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; padding: 0 0.5rem; margin-bottom: 2.5rem; }
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--purple), var(--violet));
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; color: #fff; flex-shrink: 0;
+        }
+        .logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+        .logo-text span { color: var(--purple); }
+
+        .nav-section { flex: 1; }
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--text-3);
+            padding: 0 0.8rem; margin-bottom: 0.5rem;
+        }
+        .nav-list { list-style: none; margin-bottom: 2rem; }
+        .nav-list li a {
+            display: flex; align-items: center; gap: 11px;
+            padding: 0.65rem 0.8rem; border-radius: var(--radius-sm);
+            text-decoration: none; color: var(--text-2);
+            font-size: 0.88rem; font-weight: 500; transition: var(--transition);
+        }
+        .nav-list li a i { width: 18px; text-align: center; font-size: 0.9rem; }
+        .nav-list li a:hover { color: var(--text); background: var(--surface-3); }
+        .nav-list li.active a { color: var(--purple); background: var(--purple-dim); }
+
+        .sidebar-footer { border-top: 1px solid var(--border); padding-top: 1.2rem; }
+        .user-card { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--violet));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0;
+        }
+        .user-info .name { font-size: 0.85rem; font-weight: 600; }
+        .user-info .role { font-size: 0.72rem; color: var(--text-2); }
+        .logout-btn {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0.65rem 0.8rem; border-radius: var(--radius-sm);
+            text-decoration: none; color: var(--red);
+            font-size: 0.88rem; font-weight: 500; transition: var(--transition);
+        }
+        .logout-btn:hover { background: var(--red-dim); }
+
+        /* ══ MAIN ══ */
+        .main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem 2.4rem; max-width: calc(100vw - var(--sidebar-w)); }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.8rem; }
+        .welcome h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+        .welcome h1 span { color: var(--purple); }
+        .welcome p { color: var(--text-2); font-size: 0.88rem; margin-top: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .date-chip {
+            background: var(--surface-2); border: 1px solid var(--border);
+            padding: 0.45rem 0.9rem; border-radius: var(--radius-sm);
+            font-size: 0.8rem; color: var(--text-2); font-family: var(--mono);
+        }
+        .icon-btn {
+            width: 38px; height: 38px; border-radius: var(--radius-sm);
+            background: var(--surface-2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-2); position: relative; transition: var(--transition);
+        }
+        .icon-btn:hover { border-color: var(--border-hover); color: var(--text); }
+        .notif-dot {
+            position: absolute; top: 7px; right: 7px;
+            width: 7px; height: 7px; background: var(--red);
+            border-radius: 50%; border: 1.5px solid var(--surface-2);
+        }
+
+        /* System Status Bar */
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--purple-dim); border: 1px solid rgba(168,85,247,0.2);
+            padding: 0.75rem 1.4rem; border-radius: var(--radius); margin-bottom: 2rem;
+        }
+        .status-left { display: flex; align-items: center; gap: 10px; color: var(--purple); font-size: 0.88rem; font-weight: 500; }
+        .pulse { width: 9px; height: 9px; background: var(--purple); border-radius: 50%; animation: pulse 2s ease infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(168,85,247,0); }
+        }
+        .status-right { display: flex; gap: 20px; }
+        .status-pill {
+            font-size: 0.75rem; font-family: var(--mono);
+            color: var(--text-2); display: flex; align-items: center; gap: 5px;
+        }
+        .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+        .status-pill .dot.warn { background: var(--amber); }
+
+        /* Section label */
+        .section-label {
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--text-3); margin-bottom: 0.9rem;
+        }
+
+        /* ══ STAT CARDS ══ */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 2.4rem;
+        }
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 700px)  { .stats-grid { grid-template-columns: 1fr; } }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.4rem;
+            position: relative; overflow: hidden;
+            transition: var(--transition); cursor: default;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; inset: 0; opacity: 0;
+            background: radial-gradient(ellipse at 0% 0%, var(--accent-dim), transparent 70%);
+            transition: var(--transition);
+        }
+        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+        .stat-card:hover::before { opacity: 1; }
+
+        .stat-card.users    { --accent: var(--primary); --accent-dim: var(--primary-dim); }
+        .stat-card.doctors  { --accent: var(--green);   --accent-dim: var(--green-dim); }
+        .stat-card.appts    { --accent: var(--amber);   --accent-dim: var(--amber-dim); }
+        .stat-card.system   { --accent: var(--purple);  --accent-dim: var(--purple-dim); }
+
+        .stat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.1rem; }
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--accent-dim); display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1rem;
+        }
+        .stat-trend { font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 20px; background: var(--green-dim); color: var(--green); }
+        .stat-trend.warn { background: var(--amber-dim); color: var(--amber); }
+        .stat-label { font-size: 0.78rem; color: var(--text-2); margin-bottom: 6px; }
+        .stat-value { font-size: 2.1rem; font-weight: 700; font-family: var(--mono); letter-spacing: -0.03em; color: var(--text); line-height: 1; }
+        .stat-sub { font-size: 0.72rem; color: var(--text-3); margin-top: 4px; }
+
+        /* ══ CONTENT ROW ══ */
+        .content-row {
+            display: grid; grid-template-columns: 1fr 320px;
+            gap: 20px; align-items: start; margin-bottom: 2rem;
+        }
+        @media (max-width: 1100px) { .content-row { grid-template-columns: 1fr; } }
+
+        /* ══ PANEL ══ */
+        .card-panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.5rem;
+        }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.4rem; }
+        .panel-title { font-size: 0.95rem; font-weight: 600; }
+        .panel-link { font-size: 0.78rem; color: var(--purple); text-decoration: none; font-weight: 500; }
+        .panel-link:hover { text-decoration: underline; }
+
+        /* ══ USER TABLE ══ */
+        .user-table { width: 100%; border-collapse: collapse; }
+        .user-table th {
+            text-align: left; font-size: 0.7rem; font-weight: 600;
+            letter-spacing: 0.07em; text-transform: uppercase;
+            color: var(--text-3); padding: 0 0.8rem 0.8rem; border-bottom: 1px solid var(--border);
+        }
+        .user-table td {
+            padding: 0.85rem 0.8rem; border-bottom: 1px solid var(--border);
+            font-size: 0.82rem; vertical-align: middle;
+        }
+        .user-table tr:last-child td { border-bottom: none; }
+        .user-table tr:hover td { background: var(--surface-2); }
+
+        .table-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.72rem; color: #fff;
+            margin-right: 8px; vertical-align: middle;
+        }
+        .av-p { background: linear-gradient(135deg, #3b9eff, #8b7cf8); }
+        .av-d { background: linear-gradient(135deg, #22d3a5, #22d3ee); }
+        .av-a { background: linear-gradient(135deg, #a855f7, #8b7cf8); }
+
+        .role-tag {
+            font-size: 0.68rem; font-weight: 600; padding: 2px 8px;
+            border-radius: 20px; display: inline-block;
+        }
+        .role-tag.patient { background: var(--primary-dim); color: var(--primary); }
+        .role-tag.doctor  { background: var(--green-dim);   color: var(--green); }
+        .role-tag.admin   { background: var(--purple-dim);  color: var(--purple); }
+
+        .status-tag {
+            font-size: 0.68rem; font-weight: 600; padding: 2px 8px;
+            border-radius: 20px; display: inline-block;
+        }
+        .status-tag.active   { background: var(--green-dim); color: var(--green); }
+        .status-tag.inactive { background: var(--red-dim);   color: var(--red); }
+        .status-tag.pending  { background: var(--amber-dim); color: var(--amber); }
+
+        .action-btn {
+            background: none; border: 1px solid var(--border); color: var(--text-2);
+            padding: 3px 8px; border-radius: 5px; font-size: 0.72rem;
+            cursor: pointer; transition: var(--transition); font-family: inherit;
+        }
+        .action-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+        /* ══ SYSTEM PANEL ══ */
+        .system-panel { display: flex; flex-direction: column; gap: 14px; }
+
+        .sys-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.2rem 1.4rem;
+        }
+        .sys-card-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
+
+        .sys-metric { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .sys-metric:last-child { margin-bottom: 0; }
+        .sys-metric-label { font-size: 0.78rem; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+        .sys-metric-val   { font-size: 0.78rem; font-family: var(--mono); color: var(--text); font-weight: 600; }
+
+        .progress-track { background: var(--surface-3); border-radius: 99px; height: 5px; overflow: hidden; margin-top: 4px; }
+        .progress-fill  { height: 100%; border-radius: 99px; transition: width 1s ease; }
+        .fill-cpu    { width: 42%; background: linear-gradient(90deg, var(--primary), var(--violet)); }
+        .fill-mem    { width: 67%; background: linear-gradient(90deg, var(--purple), #c084fc); }
+        .fill-disk   { width: 31%; background: linear-gradient(90deg, var(--green), #34d399); }
+        .fill-uptime { width: 99%; background: linear-gradient(90deg, var(--green), var(--primary)); }
+
+        /* Activity feed */
+        .activity-item {
+            display: flex; gap: 10px; padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0; margin-top: 5px;
+        }
+        .activity-content { flex: 1; }
+        .activity-content p { font-size: 0.8rem; font-weight: 500; }
+        .activity-content span { font-size: 0.72rem; color: var(--text-2); }
+        .activity-time { font-size: 0.7rem; font-family: var(--mono); color: var(--text-3); flex-shrink: 0; margin-top: 3px; }
+
+        /* ══ ANIMATIONS ══ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .stat-card { animation: fadeUp 0.5s ease both; }
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.10s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.20s; }
+        .card-panel { animation: fadeUp 0.5s 0.25s ease both; }
+        .system-panel > * { animation: fadeUp 0.5s ease both; }
+        .system-panel > *:nth-child(1) { animation-delay: 0.25s; }
+        .system-panel > *:nth-child(2) { animation-delay: 0.32s; }
+        .system-panel > *:nth-child(3) { animation-delay: 0.39s; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+    
+        @keyframes scanDown { 0%{top:0} 100%{top:100%} }
+        #navKiosk.active a { color: var(--purple) !important; background: rgba(139,124,248,0.1) !important; }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js">
+
+    // ── Section switcher ──
+    function showSection(name) {
+        document.getElementById('sectionDashboard').style.display = name === 'dashboard' ? '' : 'none';
+        document.getElementById('sectionKiosk').style.display     = name === 'kiosk'     ? '' : 'none';
+
+        // nav active state
+        document.querySelectorAll('.nav-list li').forEach(li => li.classList.remove('active'));
+        if (name === 'kiosk') {
+            document.getElementById('navKiosk').classList.add('active');
+            // auto-start kiosk when section opens
+            setTimeout(kioskStart, 400);
+        }
+    }
+
+    // ── Kiosk vars ──
+    const API_URL       = 'http://localhost:5000/api';
+    const MODEL_URL     = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+    let kioskModels     = false;
+    let kioskRunning    = false;
+    let kioskProcessing = false;
+    let kioskStream     = null;
+    let kioskLoop       = null;
+    let kioskReset      = null;
+    let stableCount     = 0;
+    const STABLE        = 5;
+    const checkinLog    = [];
+
+    function setKioskStatus(msg, color) {
+        document.getElementById('kioskStatusText').textContent = msg;
+        const dot = document.getElementById('kioskDot');
+        const colors = { green:'#22d3a5', amber:'#f5a623', red:'#f25272', purple:'#8b7cf8' };
+        dot.style.background   = colors[color] || '#4f6080';
+        dot.style.boxShadow    = color === 'green' ? '0 0 5px #22d3a5' : color === 'amber' ? '0 0 5px #f5a623' : 'none';
+    }
+
+    async function loadKioskModels() {
+        if (kioskModels) return true;
+        setKioskStatus('Loading AI models...', 'amber');
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            kioskModels = true;
+            return true;
+        } catch(e) {
+            setKioskStatus('Model load failed: ' + e.message, 'red');
+            return false;
+        }
+    }
+
+    async function kioskStart() {
+        if (kioskRunning) return;
+        document.getElementById('kioskStartBtn').disabled = true;
+        const ok = await loadKioskModels();
+        if (!ok) { document.getElementById('kioskStartBtn').disabled = false; return; }
+
+        try {
+            kioskStream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480, facingMode:'user' } });
+            const vid = document.getElementById('kioskVideo');
+            vid.srcObject = kioskStream;
+            await new Promise(r => vid.onloadedmetadata = r);
+            const ov = document.getElementById('kioskOverlay');
+            ov.width  = vid.videoWidth;
+            ov.height = vid.videoHeight;
+
+            kioskRunning = true;
+            setKioskStatus('Ready — patient should look at camera', 'green');
+            document.getElementById('kioskScanLine').style.opacity = '1';
+            startKioskLoop();
+        } catch(e) {
+            setKioskStatus('Camera denied: ' + e.message, 'red');
+            document.getElementById('kioskStartBtn').disabled = false;
+        }
+    }
+
+    function kioskStop() {
+        kioskRunning    = false;
+        kioskProcessing = false;
+        stableCount     = 0;
+        if (kioskLoop)   clearInterval(kioskLoop);
+        if (kioskStream) kioskStream.getTracks().forEach(t => t.stop());
+        document.getElementById('kioskScanLine').style.opacity = '0';
+        document.getElementById('kioskStartBtn').disabled = false;
+        setKioskStatus('Kiosk stopped', 'red');
+    }
+
+    function startKioskLoop() {
+        const vid = document.getElementById('kioskVideo');
+        const ov  = document.getElementById('kioskOverlay');
+        const ctx = ov.getContext('2d');
+
+        kioskLoop = setInterval(async () => {
+            if (!kioskRunning || kioskProcessing) return;
+            const det = await faceapi.detectSingleFace(vid,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks();
+
+            ctx.clearRect(0, 0, ov.width, ov.height);
+            if (det) {
+                stableCount++;
+                const { x, y, width, height } = det.detection.box;
+                const mx = ov.width - x - width;
+                ctx.strokeStyle = '#8b7cf8';
+                ctx.lineWidth   = 2.5;
+                ctx.strokeRect(mx, y, width, height);
+                setKioskStatus('Face detected — hold still...', 'green');
+                if (stableCount >= STABLE) { stableCount = 0; doCheckin(); }
+            } else {
+                stableCount = 0;
+                setKioskStatus('Ready — patient should look at camera', 'green');
+            }
+        }, 300);
+    }
+
+    async function doCheckin() {
+        if (kioskProcessing) return;
+        kioskProcessing = true;
+        setKioskStatus('Identifying patient...', 'amber');
+
+        try {
+            const vid = document.getElementById('kioskVideo');
+            const det = await faceapi.detectSingleFace(vid,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks().withFaceDescriptor();
+
+            if (!det) { kioskProcessing = false; return; }
+
+            const res  = await fetch(`${API_URL}/face/checkin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ descriptor: Array.from(det.descriptor) })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) kioskShowSuccess(data);
+            else kioskShowFail(data.error || 'Not recognized', !!data.recognized);
+        } catch(e) {
+            kioskShowFail('Server error: ' + e.message, false);
+        }
+    }
+
+    function kioskShowSuccess(data) {
+        document.getElementById('kioskResultIcon').textContent = '✅';
+        document.getElementById('kioskResultName').textContent = 'Welcome, ' + data.patientName + '!';
+        document.getElementById('kioskResultSub').textContent  = 'Checked in. Doctor notified.';
+        document.getElementById('kioskApptDetails').style.display = 'block';
+        document.getElementById('kioskResDoctor').textContent  = data.doctorName || '–';
+        document.getElementById('kioskResTime').textContent    = data.timeSlot   || '–';
+        document.getElementById('kioskResReason').textContent  = data.reason     || '–';
+
+        const card = document.getElementById('kioskResultCard');
+        card.style.borderColor = '#22d3a5';
+        card.style.boxShadow   = '0 0 20px rgba(34,211,165,0.12)';
+
+        setKioskStatus('Checked in ✓', 'green');
+        addToLog(data.patientName, data.timeSlot, true);
+        startKioskReset(7);
+    }
+
+    function kioskShowFail(msg, recognized) {
+        document.getElementById('kioskResultIcon').textContent = recognized ? '📅' : '❌';
+        document.getElementById('kioskResultName').textContent = recognized ? 'No appointment today' : 'Not recognized';
+        document.getElementById('kioskResultSub').textContent  = msg;
+        document.getElementById('kioskApptDetails').style.display = 'none';
+
+        const card = document.getElementById('kioskResultCard');
+        card.style.borderColor = '#f25272';
+        card.style.boxShadow   = '0 0 20px rgba(242,82,114,0.1)';
+
+        setKioskStatus('Check-in failed', 'red');
+        startKioskReset(4);
+    }
+
+    function startKioskReset(secs) {
+        let n = secs;
+        const el = document.getElementById('kioskCountdown');
+        el.textContent = `Resetting in ${n}s...`;
+        kioskReset = setInterval(() => {
+            n--;
+            el.textContent = `Resetting in ${n}s...`;
+            if (n <= 0) {
+                clearInterval(kioskReset);
+                const card = document.getElementById('kioskResultCard');
+                card.style.borderColor = 'rgba(255,255,255,0.07)';
+                card.style.boxShadow   = 'none';
+                document.getElementById('kioskResultIcon').textContent = '📷';
+                document.getElementById('kioskResultName').textContent = 'Kiosk Ready';
+                document.getElementById('kioskResultSub').textContent  = 'Next patient can step up.';
+                document.getElementById('kioskApptDetails').style.display = 'none';
+                el.textContent = '';
+                kioskProcessing = false;
+                stableCount     = 0;
+                setKioskStatus('Ready — patient should look at camera', 'green');
+            }
+        }, 1000);
+    }
+
+    function addToLog(name, time, success) {
+        const now  = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+        checkinLog.unshift({ name, time, success, at: now });
+        const logEl = document.getElementById('kioskLog');
+        logEl.innerHTML = checkinLog.map(entry => `
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div style="width:8px;height:8px;border-radius:50%;background:${entry.success ? '#22d3a5' : '#f25272'};flex-shrink:0;"></div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.name}</div>
+                    <div style="font-size:0.72rem;color:var(--text-3);">${entry.time} · ${entry.at}</div>
+                </div>
+                <div style="font-size:0.7rem;color:${entry.success ? '#22d3a5' : '#f25272'};flex-shrink:0;">${entry.success ? '✓' : '✗'}</div>
+            </div>
+        `).join('');
+    }
+
+</script>
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+            <span class="logo-text">Smart<span>Care</span></span>
+        </div>
+
+        <nav class="nav-section">
+            <p class="nav-label">Administration</p>
+            <ul class="nav-list">
+                <li class="active"><a href="#"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-users"></i> User Management</a></li>
+                <li><a href="#"><i class="fas fa-user-doctor"></i> Doctors</a></li>
+                <li><a href="#"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#"><i class="fas fa-server"></i> System</a></li>
+                <li><a href="#"><i class="fas fa-gear"></i> Settings</a></li>
+                <li id="navKiosk"><a href="checkin.html" onclick="showSection('kiosk')"><i class="fas fa-camera"></i> Check-In Kiosk</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="adminAvatar">AD</div>
+                <div class="user-info">
+                    <div class="name" id="adminName">Admin</div>
+                    <div class="role" id="adminDept">System Administrator</div>
+                </div>
+            </div>
+            <a href="#" class="logout-btn" id="logoutBtn">
+                <i class="fas fa-arrow-right-from-bracket"></i> Log out
+            </a>
+        </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="welcome">
+                <h1>Control Panel, <span id="headerName">Admin</span> 🛡️</h1>
+                <p>System is running normally. <strong id="alertCount" style="color:var(--amber)">2 alerts</strong> require your attention.</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-chip" id="currentDate">–</div>
+                <div class="icon-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-dot"></span>
+                </div>
+            </div>
+        </header>
+
+        <div id="sectionDashboard">
+        <!-- System Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="pulse"></span>
+                <i class="fas fa-server" style="font-size:0.8rem;"></i>
+                All Systems Operational
+            </div>
+            <div class="status-right">
+                <span class="status-pill"><span class="dot"></span>MongoDB</span>
+                <span class="status-pill"><span class="dot"></span>API Server</span>
+                <span class="status-pill"><span class="dot warn"></span>Backup</span>
+                <span class="status-pill" style="font-size:0.72rem;color:var(--text-3);font-family:var(--mono)" id="sysTime">–</span>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <p class="section-label">System Overview</p>
+        <div class="stats-grid">
+
+            <div class="stat-card users">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <span class="stat-trend">+12 this week</span>
+                </div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="statTotalUsers">–</div>
+                <div class="stat-sub" id="statUserSub">Loading...</div>
+            </div>
+
+            <div class="stat-card doctors">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-user-doctor"></i></div>
+                    <span class="stat-trend">All verified</span>
+                </div>
+                <div class="stat-label">Active Doctors</div>
+                <div class="stat-value" id="statDoctors">–</div>
+                <div class="stat-sub" id="statDoctorSub">Loading...</div>
+            </div>
+
+            <div class="stat-card appts">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                    <span class="stat-trend warn">34 pending</span>
+                </div>
+                <div class="stat-label">Today's Appointments</div>
+                <div class="stat-value" id="statAppts">–</div>
+                <div class="stat-sub" id="statApptSub">Loading...</div>
+            </div>
+
+            <div class="stat-card system">
+                <div class="stat-top">
+                    <div class="stat-icon"><i class="fas fa-server"></i></div>
+                    <span class="stat-trend">99.9% uptime</span>
+                </div>
+                <div class="stat-label">System Health</div>
+                <div class="stat-value" id="statHealth" style="font-size:1.3rem;">Good</div>
+                <div class="stat-sub" id="statHealthSub">All services running</div>
+            </div>
+
+        </div>
+
+        <!-- Content Row -->
+        <div class="content-row">
+
+            <!-- User Management Table -->
+            <div class="card-panel">
+                <div class="panel-header">
+                    <span class="panel-title">Recent User Registrations</span>
+                    <a href="#" class="panel-link">Manage all users →</a>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:1.5rem;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right: System Health + Activity -->
+            <div class="system-panel">
+
+                <!-- System Health -->
+                <div class="sys-card">
+                    <div class="sys-card-title"><i class="fas fa-server" style="margin-right:6px;color:var(--purple)"></i>System Health</div>
+                    <div>
+                        <div class="sys-metric">
+                            <span class="sys-metric-label"><i class="fas fa-microchip"></i> CPU Usage</span>
+                            <span class="sys-metric-val">42%</span>
+                        </div>
+                        <div class="progress-track" style="margin-bottom:10px;"><div class="progress-fill fill-cpu"></div></div>
+
+                        <div class="sys-metric">
+                            <span class="sys-metric-label"><i class="fas fa-memory"></i> Memory</span>
+                            <span class="sys-metric-val">67%</span>
+                        </div>
+                        <div class="progress-track" style="margin-bottom:10px;"><div class="progress-fill fill-mem"></div></div>
+
+                        <div class="sys-metric">
+                            <span class="sys-metric-label"><i class="fas fa-hard-drive"></i> Disk Usage</span>
+                            <span class="sys-metric-val">31%</span>
+                        </div>
+                        <div class="progress-track" style="margin-bottom:10px;"><div class="progress-fill fill-disk"></div></div>
+
+                        <div class="sys-metric">
+                            <span class="sys-metric-label"><i class="fas fa-circle-check"></i> Uptime</span>
+                            <span class="sys-metric-val" style="color:var(--green)">99.9%</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill fill-uptime"></div></div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="sys-card">
+                    <div class="sys-card-title"><i class="fas fa-clock-rotate-left" style="margin-right:6px;color:var(--amber)"></i>Recent Activity</div>
+                    <div id="activityFeed">
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:var(--green)"></div>
+                            <div class="activity-content">
+                                <p>New patient registered</p>
+                                <span>Rahul Kumar · Patient</span>
+                            </div>
+                            <div class="activity-time">2m ago</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:var(--primary)"></div>
+                            <div class="activity-content">
+                                <p>Doctor verified</p>
+                                <span>Dr. John Patel · Cardiology</span>
+                            </div>
+                            <div class="activity-time">18m ago</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:var(--amber)"></div>
+                            <div class="activity-content">
+                                <p>Appointment flagged</p>
+                                <span>Slot conflict · 10:30 AM</span>
+                            </div>
+                            <div class="activity-time">45m ago</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:var(--violet)"></div>
+                            <div class="activity-content">
+                                <p>System backup started</p>
+                                <span>MongoDB · Auto-scheduled</span>
+                            </div>
+                            <div class="activity-time">1h ago</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:var(--red)"></div>
+                            <div class="activity-content">
+                                <p>Failed login attempt</p>
+                                <span>Unknown IP · Blocked</span>
+                            </div>
+                            <div class="activity-time">2h ago</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        </div><!-- end sectionDashboard -->
+
+        <!-- ═══ CHECK-IN KIOSK SECTION ═══ -->
+
+        <div id="sectionKiosk" style="display:none;">
+
+            <p class="section-label">Check-In Kiosk</p>
+
+            <!-- Kiosk layout -->
+            <div style="display:flex;gap:24px;align-items:flex-start;">
+
+                <!-- Camera panel -->
+                <div style="flex:1;min-width:0;">
+                    <div id="kioskCamWrap" style="
+                        position:relative; width:100%; aspect-ratio:4/3;
+                        background:#060d1a; border-radius:18px; overflow:hidden;
+                        border:2px solid rgba(255,255,255,0.07);
+                        box-shadow:0 0 40px rgba(139,124,248,0.06);
+                        transition:border-color 0.3s, box-shadow 0.3s;
+                    ">
+                        <video id="kioskVideo" autoplay muted playsinline
+                            style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                        <canvas id="kioskOverlay"
+                            style="position:absolute;top:0;left:0;width:100%;height:100%;transform:scaleX(-1);"></canvas>
+
+                        <!-- Oval guide -->
+                        <div style="
+                            position:absolute;top:50%;left:50%;
+                            transform:translate(-50%,-55%);
+                            width:180px;height:230px;
+                            border:2.5px dashed rgba(139,124,248,0.4);
+                            border-radius:50%; pointer-events:none;
+                            transition:border-color 0.3s;
+                        " id="kioskOval"></div>
+
+                        <!-- Scan line -->
+                        <div id="kioskScanLine" style="
+                            position:absolute;left:0;right:0;height:2px;
+                            background:linear-gradient(90deg,transparent,var(--purple),transparent);
+                            top:0; opacity:0;
+                            animation:scanDown 2s linear infinite;
+                        "></div>
+
+                        <!-- Status pill -->
+                        <div style="
+                            position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+                            background:rgba(13,21,38,0.85); backdrop-filter:blur(8px);
+                            border:1px solid rgba(255,255,255,0.08);
+                            border-radius:20px; padding:7px 18px;
+                            font-size:0.78rem; color:var(--text-2);
+                            display:flex; align-items:center; gap:8px; white-space:nowrap;
+                        ">
+                            <span id="kioskDot" style="width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;"></span>
+                            <span id="kioskStatusText">Initializing...</span>
+                        </div>
+                    </div>
+
+                    <!-- Kiosk controls row -->
+                    <div style="display:flex;gap:10px;margin-top:14px;">
+                        <button id="kioskStartBtn" onclick="kioskStart()" style="
+                            flex:1;padding:11px;border:none;border-radius:12px;
+                            background:linear-gradient(135deg,var(--purple),#6c5ce7);
+                            color:#fff;font-size:0.88rem;font-weight:600;
+                            cursor:pointer;font-family:inherit;
+                            transition:opacity 0.2s;
+                        ">▶ Start Kiosk</button>
+                        <button onclick="kioskStop()" style="
+                            padding:11px 18px;border:1px solid rgba(255,255,255,0.1);
+                            border-radius:12px;background:transparent;
+                            color:var(--text-2);font-size:0.88rem;
+                            cursor:pointer;font-family:inherit;
+                        ">■ Stop</button>
+                    </div>
+                </div>
+
+                <!-- Right panel -->
+                <div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;">
+
+                    <!-- Result card -->
+                    <div id="kioskResultCard" style="
+                        background:var(--surface-2);
+                        border:1px solid rgba(255,255,255,0.07);
+                        border-radius:16px;padding:22px;text-align:center;
+                        min-height:180px;display:flex;flex-direction:column;
+                        align-items:center;justify-content:center;gap:8px;
+                    ">
+                        <div style="font-size:2.8rem;" id="kioskResultIcon">📷</div>
+                        <div style="font-size:1rem;font-weight:600;color:var(--text);" id="kioskResultName">Kiosk Ready</div>
+                        <div style="font-size:0.78rem;color:var(--text-2);line-height:1.5;" id="kioskResultSub">Click Start Kiosk, then have the patient look at the camera.</div>
+                        <div id="kioskApptDetails" style="
+                            width:100%;background:rgba(255,255,255,0.03);
+                            border-radius:10px;padding:12px;text-align:left;
+                            margin-top:6px;display:none;font-size:0.78rem;
+                        ">
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                <span style="color:var(--text-3);">Doctor</span>
+                                <span style="color:var(--text);font-weight:500;" id="kioskResDoctor">–</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                <span style="color:var(--text-3);">Time</span>
+                                <span style="color:var(--text);font-weight:500;" id="kioskResTime">–</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                                <span style="color:var(--text-3);">Reason</span>
+                                <span style="color:var(--text);font-weight:500;" id="kioskResReason">–</span>
+                            </div>
+                        </div>
+                        <div style="font-size:0.7rem;color:var(--text-3);font-family:var(--mono);" id="kioskCountdown"></div>
+                    </div>
+
+                    <!-- Today's check-ins log -->
+                    <div class="sys-card">
+                        <div class="sys-card-title">
+                            <i class="fas fa-list-check" style="margin-right:6px;color:var(--purple)"></i>
+                            Today's Check-Ins
+                        </div>
+                        <div id="kioskLog" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
+                            <div style="color:var(--text-3);font-size:0.78rem;text-align:center;padding:1rem 0;">
+                                No check-ins yet today
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="sys-card">
+                        <div class="sys-card-title">
+                            <i class="fas fa-circle-info" style="margin-right:6px;color:var(--primary)"></i>
+                            How It Works
+                        </div>
+                        <div style="font-size:0.78rem;color:var(--text-2);line-height:1.7;">
+                            1. Patient must have enrolled their face from their dashboard.<br>
+                            2. Click <strong style="color:var(--text);">Start Kiosk</strong> to activate camera.<br>
+                            3. Patient looks at camera — auto-recognized in ~2 seconds.<br>
+                            4. Appointment marked <strong style="color:var(--green);">CHECKED_IN</strong> and doctor notified.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+    </main>
+</div>
+
+<script>
+    // Auth guard
+    const token = localStorage.getItem('token');
+    const user  = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token) { window.location.href = '../../login/login.html'; }
+    if (user.role && user.role.toUpperCase() !== 'ADMIN') { window.location.href = '../../login/login.html'; }
+
+
+    // ── Real data from API ──
+    const ADMIN_API = 'http://localhost:5000/api';
+    const adminToken = localStorage.getItem('token');
+
+    async function loadAdminStats() {
+        try {
+            const res  = await fetch(`${ADMIN_API}/admin/stats`, { headers: { Authorization: `Bearer ${adminToken}` } });
+            const data = await res.json();
+
+            document.getElementById('statTotalUsers').textContent = data.totalUsers   ?? '–';
+            document.getElementById('statUserSub').textContent    =
+                `${data.totalPatients ?? 0} patients · ${data.totalDoctors ?? 0} doctors · ${data.totalAdmins ?? 0} admins`;
+            document.getElementById('statDoctors').textContent    = data.totalDoctors ?? '–';
+            document.getElementById('statDoctorSub').textContent  = `${data.activeUsers ?? 0} active users`;
+            document.getElementById('statAppts').textContent      = data.totalAppts   ?? '–';
+            document.getElementById('statApptSub').textContent    =
+                `${data.todayAppts ?? 0} today · ${data.pendingAppts ?? 0} pending`;
+        } catch(e) {
+            console.error('Stats load failed', e);
+        }
+    }
+
+    async function loadAdminUsers() {
+        try {
+            const res   = await fetch(`${ADMIN_API}/admin/users?limit=20`, { headers: { Authorization: `Bearer ${adminToken}` } });
+            const users = await res.json();
+            const tbody = document.getElementById('userTableBody');
+
+            if (!Array.isArray(users) || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:1.5rem;">No users found</td></tr>';
+                return;
+            }
+
+            const roleColors = { PATIENT:'patient', DOCTOR:'doctor', ADMIN:'admin' };
+
+            tbody.innerHTML = users.map(u => {
+                const initials = (u.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+                const roleClass = roleColors[(u.role||'').toUpperCase()] || 'patient';
+                const joined = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US',
+                    { day:'2-digit', month:'short', year:'numeric' }) : '—';
+                const statusClass = u.enabled ? 'active' : 'inactive';
+                const statusLabel = u.enabled ? 'Active' : 'Inactive';
+                const btnLabel    = u.enabled ? 'Disable' : 'Enable';
+                const btnStyle    = u.enabled
+                    ? 'background:rgba(242,82,114,0.1);color:#f25272;border-color:rgba(242,82,114,0.2);'
+                    : 'background:rgba(34,211,165,0.1);color:#22d3a5;border-color:rgba(34,211,165,0.2);';
+                const isAdmin = (u.role||'').toUpperCase() === 'ADMIN';
+
+                return `<tr>
+                    <td><span class="table-avatar av-${roleClass[0]}">${initials}</span>${u.name || '—'}</td>
+                    <td><span class="role-tag ${roleClass}">${u.role || '—'}</span></td>
+                    <td style="color:var(--text-2);font-family:var(--mono);font-size:0.78rem;">${joined}</td>
+                    <td><span class="status-tag ${statusClass}">${statusLabel}</span></td>
+                    <td>${isAdmin ? '<span style="color:var(--text-3);font-size:0.78rem;">—</span>'
+                        : `<button class="action-btn" style="${btnStyle}" onclick="toggleUser('${u.id}', ${u.enabled})">${btnLabel}</button>`
+                    }</td>
+                </tr>`;
+            }).join('');
+
+            // Build activity feed from recent users
+            const feed = document.getElementById('activityFeed');
+            if (feed) {
+                feed.innerHTML = users.slice(0,5).map(u => {
+                    const ago = timeAgo(u.createdAt);
+                    const dotColor = u.role === 'DOCTOR' ? 'var(--primary)' : u.role === 'ADMIN' ? 'var(--violet)' : 'var(--green)';
+                    return `<div class="activity-item">
+                        <div class="activity-dot" style="background:${dotColor}"></div>
+                        <div class="activity-content">
+                            <p>${u.role === 'DOCTOR' ? 'Doctor registered' : u.role === 'ADMIN' ? 'Admin added' : 'Patient registered'}</p>
+                            <span>${u.name || '—'} · ${u.role || ''}</span>
+                        </div>
+                        <div class="activity-time">${ago}</div>
+                    </div>`;
+                }).join('');
+            }
+        } catch(e) {
+            console.error('Users load failed', e);
+            document.getElementById('userTableBody').innerHTML =
+                '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:1.5rem;">Could not load users</td></tr>';
+        }
+    }
+
+    async function toggleUser(id, currentlyEnabled) {
+        try {
+            const res = await fetch(`${ADMIN_API}/admin/users/${id}/toggle`, {
+                method: 'PUT', headers: { Authorization: `Bearer ${adminToken}` }
+            });
+            if (res.ok) loadAdminUsers();
+        } catch(e) { console.error('Toggle failed', e); }
+    }
+
+    function timeAgo(dateStr) {
+        if (!dateStr) return '—';
+        const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+        if (diff < 60)   return Math.floor(diff) + 's ago';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+    }
+
+    // Load all data on init
+    loadAdminStats();
+    loadAdminUsers();
+    // Refresh every 60s
+    setInterval(() => { loadAdminStats(); loadAdminUsers(); }, 60000);
+
+    // Load user info
+    const nameParts = (user.name || 'Admin').split(' ');
+    const initials  = nameParts.map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const firstName = nameParts[0] || 'Admin';
+
+    document.getElementById('adminAvatar').textContent = initials;
+    document.getElementById('adminName').textContent   = user.name || 'Admin';
+    document.getElementById('adminDept').textContent   = user.department || user.accessLevel || 'Administrator';
+    document.getElementById('headerName').textContent  = firstName;
+
+    // Date
+    const now = new Date();
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+    });
+
+    // Live clock in status bar
+    function updateClock() {
+        document.getElementById('sysTime').textContent =
+            new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../../login/login.html';
+    });
+
+
+    // ── Section switcher ──
+
+
+    // ── Kiosk vars ──
+    const API_URL       = 'http://localhost:5000/api';
+    const MODEL_URL     = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+    let kioskModels     = false;
+    let kioskRunning    = false;
+    let kioskProcessing = false;
+    let kioskStream     = null;
+    let kioskLoop       = null;
+    let kioskReset      = null;
+    let stableCount     = 0;
+    const STABLE        = 5;
+    const checkinLog    = [];
+
+    function setKioskStatus(msg, color) {
+        document.getElementById('kioskStatusText').textContent = msg;
+        const dot = document.getElementById('kioskDot');
+        const colors = { green:'#22d3a5', amber:'#f5a623', red:'#f25272', purple:'#8b7cf8' };
+        dot.style.background   = colors[color] || '#4f6080';
+        dot.style.boxShadow    = color === 'green' ? '0 0 5px #22d3a5' : color === 'amber' ? '0 0 5px #f5a623' : 'none';
+    }
+
+    async function loadKioskModels() {
+        if (kioskModels) return true;
+        setKioskStatus('Loading AI models...', 'amber');
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            kioskModels = true;
+            return true;
+        } catch(e) {
+            setKioskStatus('Model load failed: ' + e.message, 'red');
+            return false;
+        }
+    }
+
+    async function kioskStart() {
+        if (kioskRunning) return;
+        document.getElementById('kioskStartBtn').disabled = true;
+        const ok = await loadKioskModels();
+        if (!ok) { document.getElementById('kioskStartBtn').disabled = false; return; }
+
+        try {
+            kioskStream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480, facingMode:'user' } });
+            const vid = document.getElementById('kioskVideo');
+            vid.srcObject = kioskStream;
+            await new Promise(r => vid.onloadedmetadata = r);
+            const ov = document.getElementById('kioskOverlay');
+            ov.width  = vid.videoWidth;
+            ov.height = vid.videoHeight;
+
+            kioskRunning = true;
+            setKioskStatus('Ready — patient should look at camera', 'green');
+            document.getElementById('kioskScanLine').style.opacity = '1';
+            startKioskLoop();
+        } catch(e) {
+            setKioskStatus('Camera denied: ' + e.message, 'red');
+            document.getElementById('kioskStartBtn').disabled = false;
+        }
+    }
+
+    function kioskStop() {
+        kioskRunning    = false;
+        kioskProcessing = false;
+        stableCount     = 0;
+        if (kioskLoop)   clearInterval(kioskLoop);
+        if (kioskStream) kioskStream.getTracks().forEach(t => t.stop());
+        document.getElementById('kioskScanLine').style.opacity = '0';
+        document.getElementById('kioskStartBtn').disabled = false;
+        setKioskStatus('Kiosk stopped', 'red');
+    }
+
+    function startKioskLoop() {
+        const vid = document.getElementById('kioskVideo');
+        const ov  = document.getElementById('kioskOverlay');
+        const ctx = ov.getContext('2d');
+
+        kioskLoop = setInterval(async () => {
+            if (!kioskRunning || kioskProcessing) return;
+            const det = await faceapi.detectSingleFace(vid,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks();
+
+            ctx.clearRect(0, 0, ov.width, ov.height);
+            if (det) {
+                stableCount++;
+                const { x, y, width, height } = det.detection.box;
+                const mx = ov.width - x - width;
+                ctx.strokeStyle = '#8b7cf8';
+                ctx.lineWidth   = 2.5;
+                ctx.strokeRect(mx, y, width, height);
+                setKioskStatus('Face detected — hold still...', 'green');
+                if (stableCount >= STABLE) { stableCount = 0; doCheckin(); }
+            } else {
+                stableCount = 0;
+                setKioskStatus('Ready — patient should look at camera', 'green');
+            }
+        }, 300);
+    }
+
+    async function doCheckin() {
+        if (kioskProcessing) return;
+        kioskProcessing = true;
+        setKioskStatus('Identifying patient...', 'amber');
+
+        try {
+            const vid = document.getElementById('kioskVideo');
+            const det = await faceapi.detectSingleFace(vid,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks().withFaceDescriptor();
+
+            if (!det) { kioskProcessing = false; return; }
+
+            const res  = await fetch(`${API_URL}/face/checkin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ descriptor: Array.from(det.descriptor) })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) kioskShowSuccess(data);
+            else kioskShowFail(data.error || 'Not recognized', !!data.recognized);
+        } catch(e) {
+            kioskShowFail('Server error: ' + e.message, false);
+        }
+    }
+
+    function kioskShowSuccess(data) {
+        document.getElementById('kioskResultIcon').textContent = '✅';
+        document.getElementById('kioskResultName').textContent = 'Welcome, ' + data.patientName + '!';
+        document.getElementById('kioskResultSub').textContent  = 'Checked in. Doctor notified.';
+        document.getElementById('kioskApptDetails').style.display = 'block';
+        document.getElementById('kioskResDoctor').textContent  = data.doctorName || '–';
+        document.getElementById('kioskResTime').textContent    = data.timeSlot   || '–';
+        document.getElementById('kioskResReason').textContent  = data.reason     || '–';
+
+        const card = document.getElementById('kioskResultCard');
+        card.style.borderColor = '#22d3a5';
+        card.style.boxShadow   = '0 0 20px rgba(34,211,165,0.12)';
+
+        setKioskStatus('Checked in ✓', 'green');
+        addToLog(data.patientName, data.timeSlot, true);
+        startKioskReset(7);
+    }
+
+    function kioskShowFail(msg, recognized) {
+        document.getElementById('kioskResultIcon').textContent = recognized ? '📅' : '❌';
+        document.getElementById('kioskResultName').textContent = recognized ? 'No appointment today' : 'Not recognized';
+        document.getElementById('kioskResultSub').textContent  = msg;
+        document.getElementById('kioskApptDetails').style.display = 'none';
+
+        const card = document.getElementById('kioskResultCard');
+        card.style.borderColor = '#f25272';
+        card.style.boxShadow   = '0 0 20px rgba(242,82,114,0.1)';
+
+        setKioskStatus('Check-in failed', 'red');
+        startKioskReset(4);
+    }
+
+    function startKioskReset(secs) {
+        let n = secs;
+        const el = document.getElementById('kioskCountdown');
+        el.textContent = `Resetting in ${n}s...`;
+        kioskReset = setInterval(() => {
+            n--;
+            el.textContent = `Resetting in ${n}s...`;
+            if (n <= 0) {
+                clearInterval(kioskReset);
+                const card = document.getElementById('kioskResultCard');
+                card.style.borderColor = 'rgba(255,255,255,0.07)';
+                card.style.boxShadow   = 'none';
+                document.getElementById('kioskResultIcon').textContent = '📷';
+                document.getElementById('kioskResultName').textContent = 'Kiosk Ready';
+                document.getElementById('kioskResultSub').textContent  = 'Next patient can step up.';
+                document.getElementById('kioskApptDetails').style.display = 'none';
+                el.textContent = '';
+                kioskProcessing = false;
+                stableCount     = 0;
+                setKioskStatus('Ready — patient should look at camera', 'green');
+            }
+        }, 1000);
+    }
+
+    function addToLog(name, time, success) {
+        const now  = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+        checkinLog.unshift({ name, time, success, at: now });
+        const logEl = document.getElementById('kioskLog');
+        logEl.innerHTML = checkinLog.map(entry => `
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div style="width:8px;height:8px;border-radius:50%;background:${entry.success ? '#22d3a5' : '#f25272'};flex-shrink:0;"></div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.name}</div>
+                    <div style="font-size:0.72rem;color:var(--text-3);">${entry.time} · ${entry.at}</div>
+                </div>
+                <div style="font-size:0.7rem;color:${entry.success ? '#22d3a5' : '#f25272'};flex-shrink:0;">${entry.success ? '✓' : '✗'}</div>
+            </div>
+        `).join('');
+    }
+
+</script>
+</body>
+</html>

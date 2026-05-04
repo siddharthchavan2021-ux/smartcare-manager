@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Enrollment | SmartCare</title>
+    <link rel="stylesheet" href="../../login/login.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+        .enroll-card {
+            background: #0d1526;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 460px;
+            max-width: 95vw;
+        }
+        .logo { font-size:1.4rem; font-weight:700; color:#e8f0fe; margin-bottom:0.3rem; }
+        .logo span { color:#3b9eff; }
+        h2 { color:#e8f0fe; font-size:1.1rem; font-weight:600; margin:0 0 0.3rem; }
+        p.sub { color:#8a9cc0; font-size:0.83rem; margin:0 0 1.5rem; }
+
+        .cam-wrap {
+            position: relative;
+            width: 100%; aspect-ratio:4/3;
+            background:#060d1a;
+            border-radius:14px;
+            overflow:hidden;
+            border:2px solid rgba(255,255,255,0.07);
+            margin-bottom:1rem;
+        }
+        #video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+        #overlay { position:absolute; top:0; left:0; width:100%; height:100%; transform:scaleX(-1); }
+
+        /* Face oval guide */
+        .face-guide {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-55%);
+            width:160px; height:200px;
+            border:2.5px dashed rgba(59,158,255,0.4);
+            border-radius:50%;
+            pointer-events:none;
+        }
+
+        .status-bar {
+            display:flex; align-items:center; gap:10px;
+            padding:10px 14px;
+            background:rgba(255,255,255,0.03);
+            border-radius:10px;
+            margin-bottom:1rem;
+            font-size:0.82rem;
+            color:#8a9cc0;
+        }
+        .status-dot { width:8px; height:8px; border-radius:50%; background:#4f6080; flex-shrink:0; }
+        .status-dot.green  { background:#22d3a5; box-shadow:0 0 6px #22d3a5; }
+        .status-dot.amber  { background:#f5a623; box-shadow:0 0 6px #f5a623; }
+        .status-dot.red    { background:#f25272; }
+
+        .btn-enroll {
+            width:100%; padding:13px;
+            background:linear-gradient(135deg,#3b9eff,#8b7cf8);
+            border:none; border-radius:12px;
+            color:#fff; font-size:0.95rem; font-weight:600;
+            cursor:pointer; font-family:inherit;
+            transition:opacity 0.2s, transform 0.2s;
+        }
+        .btn-enroll:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+        .btn-enroll:hover:not(:disabled) { opacity:0.88; transform:scale(0.99); }
+
+        .success-box {
+            display:none; text-align:center; padding:1.5rem 0;
+        }
+        .success-box .icon { font-size:3rem; margin-bottom:0.5rem; }
+        .success-box h3 { color:#22d3a5; font-size:1.1rem; margin:0 0 0.4rem; }
+        .success-box p { color:#8a9cc0; font-size:0.83rem; margin:0 0 1rem; }
+        .back-link { color:#3b9eff; text-decoration:none; font-size:0.85rem; }
+        .back-link:hover { text-decoration:underline; }
+
+        .tips { margin-top:0.8rem; font-size:0.76rem; color:#4f6080; }
+        .tips li { margin-bottom:3px; }
+
+        .alert { padding:10px 14px; border-radius:10px; font-size:0.82rem; margin-bottom:1rem; display:none; }
+        .alert.error   { background:rgba(242,82,114,0.1); color:#f25272; border:1px solid rgba(242,82,114,0.2); display:block; }
+        .alert.success { background:rgba(34,211,165,0.1); color:#22d3a5; border:1px solid rgba(34,211,165,0.2); display:block; }
+    </style>
+</head>
+<body>
+<div class="particles">
+    <div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="enroll-card">
+    <div class="logo">Smart<span>Care</span></div>
+    <h2>Face Enrollment</h2>
+    <p class="sub">Register your face once for contactless clinic check-in</p>
+
+    <div id="alertBox" class="alert"></div>
+
+    <!-- Camera view -->
+    <div id="mainContent">
+        <div class="cam-wrap">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="face-guide"></div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Loading face detection models...</span>
+        </div>
+
+        <button class="btn-enroll" id="enrollBtn" disabled onclick="enrollFace()">
+            📸 Capture & Enroll Face
+        </button>
+
+        <ul class="tips">
+            <li>Look directly at the camera</li>
+            <li>Make sure your face is well lit</li>
+            <li>Remove glasses or hats if possible</li>
+            <li>Keep a neutral expression</li>
+        </ul>
+    </div>
+
+    <!-- Success state -->
+    <div class="success-box" id="successBox">
+        <div class="icon">✅</div>
+        <h3>Face Enrolled Successfully!</h3>
+        <p>You can now use the clinic kiosk to check in for your appointments automatically.</p>
+        <a href="../dashboard/patient/patient-dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    const API   = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user  = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Detect if running inside a modal iframe
+    const isModal = new URLSearchParams(window.location.search).get('modal') === 'true';
+
+    // Auth guard (skip redirect in modal — parent handles auth)
+    if (!isModal && (!token || user.role?.toUpperCase() !== 'PATIENT')) {
+        window.location.href = '../../login/login.html';
+    }
+
+    // In modal mode, hide standalone elements
+    if (isModal) {
+        document.querySelector('.particles')?.remove();
+        const logo = document.querySelector('.enroll-card > .logo');
+        if (logo) logo.style.display = 'none';
+    }
+
+    const video     = document.getElementById('video');
+    const overlay   = document.getElementById('overlay');
+    const statusDot = document.getElementById('statusDot');
+    const statusTxt = document.getElementById('statusText');
+    const enrollBtn = document.getElementById('enrollBtn');
+    let modelsLoaded = false;
+
+    function setStatus(msg, color = '') {
+        statusTxt.textContent = msg;
+        statusDot.className   = 'status-dot' + (color ? ' ' + color : '');
+    }
+
+    function showAlert(msg, type = 'error') {
+        const b = document.getElementById('alertBox');
+        b.textContent = msg;
+        b.className   = 'alert ' + type;
+    }
+
+    // Load face-api.js models from CDN
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+
+    async function loadModels() {
+        setStatus('Loading AI models (first load takes ~10s)...', 'amber');
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            modelsLoaded = true;
+            setStatus('Models ready — position your face in the oval', 'green');
+            startCamera();
+        } catch (err) {
+            setStatus('Failed to load models: ' + err.message, 'red');
+            showAlert('Could not load face detection models. Check your internet connection.');
+        }
+    }
+
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480, facingMode: 'user' }
+            });
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                overlay.width  = video.videoWidth;
+                overlay.height = video.videoHeight;
+                enrollBtn.disabled = false;
+                startDetectionLoop();
+            };
+        } catch (err) {
+            setStatus('Camera access denied', 'red');
+            showAlert('Camera permission is required. Please allow camera access and reload.');
+        }
+    }
+
+    // Live detection loop — draws box around face
+    let detectionLoop;
+    async function startDetectionLoop() {
+        const ctx = overlay.getContext('2d');
+        detectionLoop = setInterval(async () => {
+            if (!modelsLoaded) return;
+            const det = await faceapi.detectSingleFace(video,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+                .withFaceLandmarks();
+
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            if (det) {
+                const { x, y, width, height } = det.detection.box;
+                // Mirror the box (video is CSS-mirrored)
+                const mx = overlay.width - x - width;
+                ctx.strokeStyle = '#22d3a5';
+                ctx.lineWidth   = 2.5;
+                ctx.strokeRect(mx, y, width, height);
+                setStatus('Face detected ✓ — click Capture when ready', 'green');
+            } else {
+                setStatus('No face detected — position your face in the oval', 'amber');
+            }
+        }, 300);
+    }
+
+    async function enrollFace() {
+        if (!modelsLoaded) { showAlert('Models not loaded yet.'); return; }
+        enrollBtn.disabled = true;
+        enrollBtn.textContent = '⏳ Processing...';
+        setStatus('Capturing face data...', 'amber');
+
+        try {
+            const det = await faceapi.detectSingleFace(video,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!det) {
+                showAlert('No face detected. Please look directly at the camera.');
+                enrollBtn.disabled = false;
+                enrollBtn.textContent = '📸 Capture & Enroll Face';
+                return;
+            }
+
+            const descriptor = Array.from(det.descriptor); // Float32Array → regular array
+
+            // Send to backend
+            const res  = await fetch(`${API}/face/enroll`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ descriptor })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Enrollment failed');
+            }
+
+            // Stop camera and show success
+            clearInterval(detectionLoop);
+            video.srcObject?.getTracks().forEach(t => t.stop());
+
+            if (isModal) {
+                // Notify parent window and let it close the modal
+                window.parent.postMessage('FACE_ENROLLED', '*');
+            } else {
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('successBox').style.display  = 'block';
+            }
+
+        } catch (err) {
+            showAlert('Error: ' + err.message);
+            enrollBtn.disabled = false;
+            enrollBtn.textContent = '📸 Capture & Enroll Face';
+            setStatus('Try again', 'red');
+        }
+    }
+
+    // Start loading models immediately
+    window.addEventListener('load', () => {
+        // Small delay to let face-api.js CDN script load
+        setTimeout(loadModels, 500);
+    });
+</script>
+</body>
+</html>

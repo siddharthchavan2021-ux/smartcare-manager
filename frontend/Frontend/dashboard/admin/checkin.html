@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCare Check-In Kiosk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+        :root {
+            --bg:       #060d1a;
+            --surface:  #0d1526;
+            --border:   rgba(255,255,255,0.08);
+            --text:     #e8f0fe;
+            --text-2:   #8a9cc0;
+            --text-3:   #4f6080;
+            --primary:  #3b9eff;
+            --green:    #22d3a5;
+            --amber:    #f5a623;
+            --red:      #f25272;
+            --violet:   #8b7cf8;
+        }
+
+        body {
+            font-family:'Inter',sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content:'';
+            position:fixed; inset:0;
+            background: radial-gradient(ellipse at 20% 20%, rgba(59,158,255,0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(139,124,248,0.05) 0%, transparent 60%);
+            pointer-events:none;
+        }
+
+        /* ── Header ── */
+        .kiosk-header {
+            position:fixed; top:0; left:0; right:0;
+            display:flex; align-items:center; justify-content:space-between;
+            padding:18px 40px;
+            background:rgba(13,21,38,0.8);
+            backdrop-filter:blur(12px);
+            border-bottom:1px solid var(--border);
+            z-index:100;
+        }
+        .logo { font-size:1.5rem; font-weight:700; }
+        .logo span { color:var(--primary); }
+        .kiosk-label {
+            font-size:0.78rem; font-weight:600; letter-spacing:0.1em;
+            color:var(--text-3); text-transform:uppercase;
+        }
+        .live-clock { font-family:'Courier New',monospace; color:var(--text-2); font-size:0.9rem; }
+
+        /* ── Main layout ── */
+        .kiosk-main {
+            display:flex; gap:40px; align-items:flex-start;
+            padding-top:80px;
+            width:100%; max-width:1000px; padding-left:20px; padding-right:20px;
+        }
+
+        /* ── Camera panel ── */
+        .cam-panel {
+            flex:1; min-width:0;
+        }
+        .cam-wrap {
+            position:relative; width:100%; aspect-ratio:4/3;
+            background:#060d1a;
+            border-radius:20px;
+            overflow:hidden;
+            border:2px solid var(--border);
+            box-shadow:0 0 40px rgba(59,158,255,0.06);
+        }
+        .cam-wrap.scanning { border-color:rgba(59,158,255,0.4); }
+        .cam-wrap.matched  { border-color:var(--green); box-shadow:0 0 40px rgba(34,211,165,0.15); }
+        .cam-wrap.failed   { border-color:var(--red); }
+
+        #video {
+            width:100%; height:100%; object-fit:cover;
+            transform:scaleX(-1); /* mirror */
+        }
+        #overlay {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            transform:scaleX(-1);
+        }
+
+        /* Face oval guide */
+        .face-oval {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-55%);
+            width:200px; height:250px;
+            border:3px solid rgba(59,158,255,0.3);
+            border-radius:50%;
+            pointer-events:none;
+            transition:border-color 0.3s;
+        }
+        .cam-wrap.scanning .face-oval { border-color:rgba(59,158,255,0.6); animation:pulse 1.5s infinite; }
+        .cam-wrap.matched  .face-oval { border-color:var(--green); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        /* Scan line animation */
+        .scan-line {
+            position:absolute; left:0; right:0; height:2px;
+            background:linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation:scanDown 2s linear infinite;
+            opacity:0;
+        }
+        .cam-wrap.scanning .scan-line { opacity:1; }
+        @keyframes scanDown { 0%{top:0} 100%{top:100%} }
+
+        /* Status pill at bottom of camera */
+        .cam-status {
+            position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+            background:rgba(13,21,38,0.85);
+            backdrop-filter:blur(8px);
+            border:1px solid var(--border);
+            border-radius:20px; padding:7px 18px;
+            font-size:0.8rem; color:var(--text-2);
+            display:flex; align-items:center; gap:8px;
+            white-space:nowrap;
+        }
+        .cam-status .dot { width:7px; height:7px; border-radius:50%; background:var(--text-3); }
+        .cam-status .dot.green { background:var(--green); box-shadow:0 0 5px var(--green); }
+        .cam-status .dot.amber { background:var(--amber); animation:pulse 1s infinite; }
+        .cam-status .dot.red   { background:var(--red); }
+
+        /* ── Info panel ── */
+        .info-panel {
+            width:320px; flex-shrink:0;
+            display:flex; flex-direction:column; gap:16px;
+        }
+
+        .info-card {
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:16px; padding:20px;
+        }
+
+        .info-card-title {
+            font-size:0.72rem; font-weight:600; letter-spacing:0.08em;
+            text-transform:uppercase; color:var(--text-3); margin-bottom:12px;
+        }
+
+        .step-list { display:flex; flex-direction:column; gap:12px; }
+        .step-item { display:flex; align-items:center; gap:12px; }
+        .step-num {
+            width:28px; height:28px; border-radius:50%;
+            background:rgba(59,158,255,0.12); color:var(--primary);
+            font-size:0.78rem; font-weight:700;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0;
+        }
+        .step-text { font-size:0.83rem; color:var(--text-2); line-height:1.4; }
+
+        /* Result card — shown after match/fail */
+        .result-card {
+            display:none;
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:16px; padding:24px;
+            text-align:center;
+        }
+        .result-card.show { display:block; }
+        .result-card.success { border-color:var(--green); }
+        .result-card.error   { border-color:var(--red); }
+
+        .result-icon { font-size:3rem; margin-bottom:10px; }
+        .result-name { font-size:1.3rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+        .result-sub  { font-size:0.82rem; color:var(--text-2); margin-bottom:16px; }
+
+        .appt-details {
+            background:rgba(255,255,255,0.03);
+            border-radius:12px; padding:14px;
+            text-align:left; margin-bottom:14px;
+        }
+        .appt-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:0.82rem; }
+        .appt-row .label { color:var(--text-3); }
+        .appt-row .value { color:var(--text); font-weight:500; }
+
+        .countdown {
+            font-size:0.75rem; color:var(--text-3);
+            font-family:'Courier New',monospace;
+        }
+
+        /* Models loading overlay */
+        .loading-overlay {
+            position:fixed; inset:0;
+            background:rgba(6,13,26,0.92);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            z-index:200;
+            gap:16px;
+        }
+        .loading-overlay h3 { color:var(--text); font-size:1.1rem; }
+        .loading-overlay p  { color:var(--text-2); font-size:0.83rem; }
+        .spinner {
+            width:48px; height:48px; border:3px solid rgba(59,158,255,0.2);
+            border-top-color:var(--primary); border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <h3>Initializing Kiosk</h3>
+    <p id="loadingMsg">Loading face detection models...</p>
+</div>
+
+<!-- Header -->
+<header class="kiosk-header">
+    <div class="logo">Smart<span>Care</span></div>
+    <div class="kiosk-label">Self Check-In Kiosk</div>
+    <div class="live-clock" id="clock">--:--:--</div>
+</header>
+
+<!-- Main -->
+<div class="kiosk-main">
+
+    <!-- Camera -->
+    <div class="cam-panel">
+        <div class="cam-wrap" id="camWrap">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="face-oval"></div>
+            <div class="scan-line"></div>
+            <div class="cam-status">
+                <div class="dot amber" id="camDot"></div>
+                <span id="camStatus">Starting camera...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="info-panel">
+
+        <!-- Instructions (shown by default) -->
+        <div class="info-card" id="instructionCard">
+            <div class="info-card-title">How to Check In</div>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-text">Stand in front of the camera</div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-text">Position your face inside the oval</div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-text">Hold still — recognition is automatic</div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-text">Your doctor will be notified instantly</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result card (shown after attempt) -->
+        <div class="result-card" id="resultCard">
+            <div class="result-icon" id="resultIcon">–</div>
+            <div class="result-name" id="resultName">–</div>
+            <div class="result-sub"  id="resultSub">–</div>
+            <div class="appt-details" id="apptDetails" style="display:none;">
+                <div class="appt-row">
+                    <span class="label">Doctor</span>
+                    <span class="value" id="resDoctorName">–</span>
+                </div>
+                <div class="appt-row">
+                    <span class="label">Time</span>
+                    <span class="value" id="resTimeSlot">–</span>
+                </div>
+                <div class="appt-row">
+                    <span class="label">Reason</span>
+                    <span class="value" id="resReason">–</span>
+                </div>
+            </div>
+            <div class="countdown" id="countdown"></div>
+        </div>
+
+        <!-- Always-on note -->
+        <div class="info-card">
+            <div class="info-card-title">Not enrolled?</div>
+            <p style="font-size:0.82rem;color:var(--text-2);line-height:1.6;">
+                Log in to your SmartCare patient account and go to
+                <strong style="color:var(--text);">My Profile → Enroll Face</strong>
+                to set up contactless check-in.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5000/api';
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+
+    const video       = document.getElementById('video');
+    const overlay     = document.getElementById('overlay');
+    const camWrap     = document.getElementById('camWrap');
+    const camDot      = document.getElementById('camDot');
+    const camStatusEl = document.getElementById('camStatus');
+    const resultCard  = document.getElementById('resultCard');
+    const instrCard   = document.getElementById('instructionCard');
+
+    let modelsLoaded  = false;
+    let isProcessing  = false;
+    let resetTimer    = null;
+
+    // ── Live clock ──
+    setInterval(() => {
+        document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    }, 1000);
+
+    function setCamStatus(msg, color) {
+        camStatusEl.textContent = msg;
+        camDot.className = 'dot ' + color;
+    }
+
+    // ── Load models ──
+    async function loadModels() {
+        document.getElementById('loadingMsg').textContent = 'Loading AI models (~10s first time)...';
+        try {
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            modelsLoaded = true;
+            document.getElementById('loadingMsg').textContent = 'Starting camera...';
+            await startCamera();
+            document.getElementById('loadingOverlay').style.display = 'none';
+        } catch (err) {
+            document.getElementById('loadingMsg').textContent = 'Error: ' + err.message;
+        }
+    }
+
+    // ── Start camera ──
+    async function startCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480, facingMode: 'user' }
+        });
+        video.srcObject = stream;
+        await new Promise(r => video.onloadedmetadata = r);
+        overlay.width  = video.videoWidth;
+        overlay.height = video.videoHeight;
+        setCamStatus('Ready — please look at the camera', 'green');
+        camWrap.classList.add('scanning');
+        startDetectionLoop();
+    }
+
+    // ── Detection loop ──
+    let faceStableCount = 0; // how many consecutive frames a face was detected
+    const STABLE_FRAMES = 5; // auto-trigger after N stable frames
+
+    async function startDetectionLoop() {
+        const ctx = overlay.getContext('2d');
+
+        setInterval(async () => {
+            if (!modelsLoaded || isProcessing) return;
+
+            const det = await faceapi.detectSingleFace(video,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks();
+
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+            if (det) {
+                faceStableCount++;
+                const { x, y, width, height } = det.detection.box;
+                const mx = overlay.width - x - width;
+
+                // Draw detection box
+                ctx.strokeStyle = '#22d3a5';
+                ctx.lineWidth   = 2.5;
+                ctx.strokeRect(mx, y, width, height);
+
+                setCamStatus('Face detected — hold still...', 'green');
+
+                // Auto-trigger after stable detection
+                if (faceStableCount >= STABLE_FRAMES) {
+                    faceStableCount = 0;
+                    attemptCheckin();
+                }
+            } else {
+                faceStableCount = 0;
+                setCamStatus('Look at the camera to check in', 'amber');
+            }
+        }, 300);
+    }
+
+    // ── Attempt check-in ──
+    async function attemptCheckin() {
+        if (isProcessing) return;
+        isProcessing = true;
+        camWrap.classList.remove('scanning', 'matched', 'failed');
+        setCamStatus('Identifying...', 'amber');
+
+        try {
+            const det = await faceapi.detectSingleFace(video,
+                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!det) {
+                setCamStatus('Could not capture face — try again', 'amber');
+                isProcessing = false;
+                camWrap.classList.add('scanning');
+                return;
+            }
+
+            const descriptor = Array.from(det.descriptor);
+
+            const res  = await fetch(`${API}/face/checkin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ descriptor })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showSuccess(data);
+            } else {
+                showFailure(data.error || 'Face not recognized', data.recognized);
+            }
+        } catch (err) {
+            showFailure('Connection error — is the server running?', false);
+        }
+    }
+
+    // ── Show success ──
+    function showSuccess(data) {
+        camWrap.classList.add('matched');
+        instrCard.style.display = 'none';
+        resultCard.className    = 'result-card show success';
+
+        document.getElementById('resultIcon').textContent = '✅';
+        document.getElementById('resultName').textContent = 'Welcome, ' + data.patientName + '!';
+        document.getElementById('resultSub').textContent  = 'Check-in confirmed. Your doctor has been notified.';
+
+        document.getElementById('apptDetails').style.display = 'block';
+        document.getElementById('resDoctorName').textContent = data.doctorName || '—';
+        document.getElementById('resTimeSlot').textContent   = data.timeSlot   || '—';
+        document.getElementById('resReason').textContent     = data.reason     || '—';
+
+        setCamStatus('Checked in successfully ✓', 'green');
+        startResetCountdown(8);
+    }
+
+    // ── Show failure ──
+    function showFailure(msg, recognized) {
+        camWrap.classList.add('failed');
+        instrCard.style.display = 'none';
+        resultCard.className    = 'result-card show error';
+
+        if (recognized) {
+            document.getElementById('resultIcon').textContent = '📅';
+            document.getElementById('resultName').textContent = 'Face recognized';
+            document.getElementById('resultSub').textContent  = 'But no appointment found for today.';
+        } else {
+            document.getElementById('resultIcon').textContent = '❌';
+            document.getElementById('resultName').textContent = 'Not recognized';
+            document.getElementById('resultSub').textContent  = msg;
+        }
+
+        document.getElementById('apptDetails').style.display = 'none';
+        setCamStatus('Check-in failed', 'red');
+        startResetCountdown(5);
+    }
+
+    // ── Auto-reset after N seconds ──
+    function startResetCountdown(seconds) {
+        let remaining = seconds;
+        const countdownEl = document.getElementById('countdown');
+        countdownEl.textContent = `Resetting in ${remaining}s...`;
+
+        resetTimer = setInterval(() => {
+            remaining--;
+            countdownEl.textContent = `Resetting in ${remaining}s...`;
+            if (remaining <= 0) {
+                clearInterval(resetTimer);
+                resetKiosk();
+            }
+        }, 1000);
+    }
+
+    // ── Reset to ready state ──
+    function resetKiosk() {
+        isProcessing = false;
+        faceStableCount = 0;
+        camWrap.className = 'cam-wrap scanning';
+        instrCard.style.display = 'block';
+        resultCard.className = 'result-card';
+        setCamStatus('Ready — please look at the camera', 'green');
+    }
+
+    // Start
+    window.addEventListener('load', () => setTimeout(loadModels, 300));
+</script>
+</body>
+</html>

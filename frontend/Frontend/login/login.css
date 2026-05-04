@@ -1,0 +1,232 @@
+:root {
+    --primary: #38bdf8;
+    --secondary: #818cf8;
+    --dark: #0a0f1e;
+    --dark-2: #0d1526;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.1);
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --red: #f87171;
+    --green: #34d399;
+    --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* ── PARTICLES ── */
+.particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    transition: transform 0.1s ease;
+}
+.particle:nth-child(1) { width: 300px; height: 300px; background: radial-gradient(circle, rgba(56,189,248,0.08), transparent); top: -100px; right: -50px; }
+.particle:nth-child(2) { width: 200px; height: 200px; background: radial-gradient(circle, rgba(129,140,248,0.07), transparent); bottom: 50px; left: -80px; }
+.particle:nth-child(3) { width: 150px; height: 150px; background: radial-gradient(circle, rgba(56,189,248,0.05), transparent); top: 50%; left: 20%; }
+.particle:nth-child(4) { width: 100px; height: 100px; background: radial-gradient(circle, rgba(129,140,248,0.06), transparent); bottom: 20%; right: 15%; }
+.particle:nth-child(5) { width: 80px; height: 80px; background: radial-gradient(circle, rgba(34,211,238,0.06), transparent); top: 30%; right: 25%; }
+
+/* ── WRAPPER ── */
+.login-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    padding: 1.5rem;
+}
+
+/* ── CARD ── */
+.login-card {
+    background: var(--dark-2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 2.8rem 2.5rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+
+.card-header { text-align: center; margin-bottom: 2rem; }
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+    display: block;
+}
+.logo span { color: var(--primary); }
+
+.card-header h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: 0.4rem; }
+.card-header p { color: var(--text-muted); font-size: 0.9rem; }
+
+/* ── ALERT ── */
+.alert {
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    margin-bottom: 1.2rem;
+    font-weight: 500;
+}
+.alert.hidden { display: none; }
+.alert.error { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+.alert.success { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: var(--green); }
+
+/* ── INPUT GROUP ── */
+.input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 1rem 1rem 0.4rem;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+.input-group input:focus { border-color: var(--primary); }
+
+.input-group label {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+    transition: all var(--transition);
+}
+
+.input-group.focused label,
+.input-group input:focus ~ label {
+    top: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--primary);
+    transform: none;
+}
+
+.input-border {
+    position: absolute;
+    bottom: 0; left: 50%;
+    width: 0; height: 2px;
+    background: var(--primary);
+    transition: width var(--transition), left var(--transition);
+    border-radius: 2px;
+}
+.input-group input:focus ~ .input-border { width: 100%; left: 0; }
+
+.toggle-password {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.3rem;
+}
+
+/* ── REMEMBER / FORGOT ── */
+.remember-forgot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.8rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+
+.checkbox-label input { display: none; }
+.checkmark {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    position: relative;
+    transition: border-color var(--transition), background var(--transition);
+}
+.checkbox-label input:checked ~ .checkmark {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.checkbox-label input:checked ~ .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: -2px; left: 2px;
+    font-size: 0.75rem;
+    color: #0a0f1e;
+    font-weight: 700;
+}
+
+.forgot-link { color: var(--primary); font-size: 0.88rem; text-decoration: none; }
+.forgot-link:hover { text-decoration: underline; }
+
+/* ── LOGIN BUTTON ── */
+.btn-login {
+    width: 100%;
+    padding: 0.9rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 12px;
+    color: #0a0f1e;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition);
+}
+.btn-login:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(56,189,248,0.35); }
+.btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.btn-glow {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+}
+
+/* ── EXTRA LINKS ── */
+.extra-links {
+    text-align: center;
+    margin-top: 1.8rem;
+}
+.extra-links p { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 0.6rem; }
+.extra-links a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.extra-links a:hover { text-decoration: underline; }
+
+.back-home {
+    display: inline-block;
+    margin-top: 0.5rem;
+    color: var(--text-muted) !important;
+    font-size: 0.85rem;
+    font-weight: 400 !important;
+}
+
+@media (max-width: 480px) {
+    .login-card { padding: 2rem 1.5rem; }
+}

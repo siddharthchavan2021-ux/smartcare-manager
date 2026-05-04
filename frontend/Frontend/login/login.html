@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SmartCare</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<!-- FIX: particles moved OUTSIDE .login-wrapper so it's a sibling, not child -->
+<div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="card-header">
+            <div class="logo">Smart<span>Care</span></div>
+            <h1>Welcome Back</h1>
+            <p>Login to access your SmartCare account</p>
+        </div>
+
+        <div id="alertBox" class="alert hidden"></div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="email" id="email" required autocomplete="email">
+                <label for="email">Email Address</label>
+                <div class="input-border"></div>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password" required autocomplete="current-password">
+                <label for="password">Password</label>
+                <div class="input-border"></div>
+                <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                    <span class="eye-icon">👁️</span>
+                </button>
+            </div>
+
+            <div class="remember-forgot">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="remember">
+                    <span class="checkmark"></span>
+                    <span>Remember me</span>
+                </label>
+                <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn">
+                <span>Login</span>
+                <div class="btn-glow"></div>
+            </button>
+        </form>
+
+        <div class="extra-links">
+            <p>Don't have an account? <a href="../register/Register_main.html">Register</a></p>
+            <a href="../index/index.html" class="back-home">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FIX: Updated API base to /api/auth to match the fixed AuthController
+    const API = 'http://localhost:5000/api/auth';
+
+    const loginForm = document.getElementById('loginForm');
+    const alertBox  = document.getElementById('alertBox');
+
+    function showAlert(msg, type = 'error') {
+        alertBox.textContent = msg;
+        alertBox.className = `alert ${type}`;
+        alertBox.classList.remove('hidden');
+    }
+
+    // Floating label: keep label raised if input has value
+    document.querySelectorAll('.input-group input').forEach(input => {
+        input.addEventListener('focus', () => input.parentElement.classList.add('focused'));
+        input.addEventListener('blur',  () => {
+            if (!input.value) input.parentElement.classList.remove('focused');
+        });
+        if (input.value) input.parentElement.classList.add('focused');
+    });
+
+    // Toggle password visibility
+    document.querySelector('.toggle-password').addEventListener('click', function () {
+        const pwdInput = document.getElementById('password');
+        pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn  = document.getElementById('loginBtn');
+        const span = btn.querySelector('span');
+
+        const email    = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        btn.disabled = true;
+        span.textContent = 'Authenticating...';
+
+        try {
+            const res = await fetch(`${API}/login`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                if (data.unverified) {
+                    sessionStorage.setItem('pendingEmail', email);
+                    showAlert('Please verify your email first. Redirecting...', 'error');
+                    setTimeout(() => {
+                        window.location.href = '../register/verify-otp.html?email=' + encodeURIComponent(email);
+                    }, 1500);
+                    btn.disabled = false; span.textContent = 'Login';
+                    return;
+                }
+                showAlert(data.error || 'Invalid email or password');
+                btn.disabled = false;
+                span.textContent = 'Login';
+                return;
+            }
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user',  JSON.stringify(data));
+
+            showAlert('Login successful! Redirecting...', 'success');
+
+            setTimeout(() => {
+                const role = data.role.toUpperCase();
+                if      (role === 'PATIENT') window.location.href = '../dashboard/patient/patient-dashboard.html';
+                else if (role === 'DOCTOR')  window.location.href = '../dashboard/doctor/doctor-dashboard.html';
+                else if (role === 'ADMIN')   window.location.href = '../dashboard/admin/admin-dashboard.html';
+                else                         window.location.href = '../index/index.html';
+            }, 1000);
+
+        } catch (err) {
+            showAlert('Connection failed. Is the Spring Boot app running on port 8080?');
+            btn.disabled = false;
+            span.textContent = 'Login';
+        }
+    });
+</script>
+</body>
+</html>
