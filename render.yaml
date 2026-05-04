@@ -2,6 +2,7 @@ services:
   - type: web
     name: smartcare-node-backend
     env: node
+    plan: free
     region: oregon
     rootDir: backend
     buildCommand: npm install
