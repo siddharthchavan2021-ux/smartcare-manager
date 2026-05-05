@@ -67,7 +67,8 @@
 
 <script>
     // FIX: Updated API base to /api/auth to match the fixed AuthController
-    const API = 'http://localhost:5000/api/auth';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:10000/api' : '/api';
+    const API = `${API_BASE}/auth`;
 
     const loginForm = document.getElementById('loginForm');
     const alertBox  = document.getElementById('alertBox');

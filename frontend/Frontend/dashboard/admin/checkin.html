@@ -307,7 +307,7 @@
 </div>
 
 <script>
-    const API = 'http://localhost:5000/api';
+    const API = window.location.protocol === 'file:' ? 'http://localhost:10000/api' : '/api';
     const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
 
     const video       = document.getElementById('video');

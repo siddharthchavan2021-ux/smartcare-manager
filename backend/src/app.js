@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./config/db');
 
 // Import routes
@@ -20,6 +21,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for face descriptors if needed
 
+// Serve Frontend Static Files
+app.use(express.static(path.join(__dirname, '../../frontend/Frontend')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
@@ -31,10 +35,5 @@ app.use('/api/admin', adminRoutes);
 
 // Add auth middleware to admin stats explicitly since /api/admin doesn't have it globally in routes yet
 // Wait, we'll handle auth inside the route files themselves.
-
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.send('SmartCare Node.js Backend is running!');
-});
 
 module.exports = app;

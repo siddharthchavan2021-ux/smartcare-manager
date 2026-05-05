@@ -152,7 +152,8 @@
 
 <script>
     // FIX: Updated to /api/auth to match the fixed AuthController
-    const API = 'http://localhost:5000/api/auth';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:10000/api' : '/api';
+    const API = `${API_BASE}/auth`;
 
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.input-group input, .input-group select').forEach(el => {

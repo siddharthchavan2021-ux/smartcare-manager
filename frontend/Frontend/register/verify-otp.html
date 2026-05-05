@@ -150,7 +150,8 @@
 </div>
 
 <script>
-    const API = 'http://localhost:5000/api/auth';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:10000/api' : '/api';
+    const API = `${API_BASE}/auth`;
 
     // Get email from URL or sessionStorage
     const params = new URLSearchParams(window.location.search);

@@ -133,7 +133,7 @@
 </div>
 
 <script>
-    const API   = 'http://localhost:5000/api';
+    const API = window.location.protocol === 'file:' ? 'http://localhost:10000/api' : '/api';
     const token = localStorage.getItem('token');
     const user  = JSON.parse(localStorage.getItem('user') || '{}');
 
